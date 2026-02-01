@@ -4,10 +4,11 @@ import { useUserStore } from './user'
 import {
   getCurrentHourBazi,
   calculateHourEnergy,
+  calculateBaZi, // 【修复】添加缺失的导入
   getActivitiesByElement,
   getAvoidActivitiesByElement,
   calculateShenSha,
-  getLunarInfo, // Import getLunarInfo
+  getLunarInfo,
   HEAVENLY_STEM_ELEMENTS,
   EARTHLY_BRANCH_ELEMENTS
 } from '../utils/tyme'
@@ -55,13 +56,17 @@ export const useEnergyStore = defineStore('energy', () => {
         continue
       }
 
+      // 【修复1】计算当天的日柱（用于V2算法）
+      const dayBazi = calculateBaZi(today.getFullYear(), today.getMonth() + 1, today.getDate(), 12)
+
       let score = calculateHourEnergy(
         userStore.profile.bazi,
         {
           favorable: userStore.profile.favorable,
           unfavorable: userStore.profile.unfavorable
         },
-        hourBazi
+        dayBazi, // 【修复】传入日柱
+        hourBazi // 传入时辰
       )
 
       // 应用个性化规则调整分数

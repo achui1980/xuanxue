@@ -70,6 +70,13 @@
         <!-- Brief explanation -->
         <div class="detail-brief">{{ selectedHourData.brief }}</div>
 
+        <!-- 五行能量参考（始终显示） -->
+        <div class="detail-element">
+          <span class="element-label">五行：</span>
+          <span class="element-value">{{ selectedHourData.element }}旺</span>
+          <span class="element-hint">（{{ selectedHourData.elementHint }}）</span>
+        </div>
+
         <!-- Technical details only in advanced mode -->
         <div v-if="showShenSha" class="detail-shensha">
           <span v-for="s in selectedHourData.stars" :key="s.name" class="star-tag"
@@ -78,9 +85,6 @@
           <span v-for="c in selectedHourData.clashes" :key="c.name" class="clash-tag"
             >⚠️{{ c.name }}</span
           >
-        </div>
-        <div v-if="showShenSha" class="detail-element">
-          {{ selectedHourData.element }}旺 - {{ selectedHourData.elementHint }}
         </div>
       </div>
     </div>

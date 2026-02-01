@@ -191,14 +191,31 @@ function executeQuery() {
   queryResults.value = results
 }
 
-// 计算匹配分数（使用V2算法）
+// 计算匹配分数（修复版 - 根据活动类型差异化计算）
 function calculateMatchScore(year, month, day, hour, activity) {
   let score = 50 // 基础分
   const reasons = []
 
-  // 1. 使用V2算法计算八字时辰能量（核心）
+  // 【关键修复】不同活动有不同的"基础适宜度"
+  const baseScoreByType = {
+    work: 55,
+    meeting: 52,
+    study: 55,
+    sign: 48,
+    money: 48,
+    social: 52,
+    exercise: 58,
+    create: 50,
+    decision: 45,
+    rest: 60
+  }
+
+  // 根据活动类型设置基础分
+  score = baseScoreByType[activity.id] || 50
+
+  // 1. 使用V2算法计算八字时辰能量
   if (hasBirthInfo.value) {
-    const dayBazi = calculateBaZi(year, month, day, 12) // 日柱
+    const dayBazi = calculateBaZi(year, month, day, 12)
     const hourBazi = calculateBaZi(year, month, day, hour)
 
     if (dayBazi && hourBazi) {
@@ -208,71 +225,79 @@ function calculateMatchScore(year, month, day, hour, activity) {
           favorable: userStore.profile.favorable,
           unfavorable: userStore.profile.unfavorable
         },
-        dayBazi, // V2新增：日柱
-        hourBazi, // 时辰
+        dayBazi,
+        hourBazi,
         false
       )
 
-      // 八字能量占60%权重
-      score = energyScore * 0.6 + 50 * 0.4
+      // 【修复2】大幅降低八字权重到15%，让活动类型主导
+      score = score * 0.85 + energyScore * 0.15
 
-      // 2. 五行匹配（活动五行 vs 时辰五行）
+      // 【修复2】降低五行匹配权重到+12/+8，平衡活动类型和八字
       const hourElement = HEAVENLY_STEM_ELEMENTS[hourBazi.stem]
       if (hourElement === activity.wuxing) {
-        score += 12 // 同五行加分
-        reasons.push('时辰与活动五行同频')
+        score += 12
+        reasons.push('时辰五行匹配')
       } else if (favorableElements.value.includes(hourElement)) {
-        score += 8 // 喜用神时辰加分
+        score += 8
         reasons.push('喜用神时辰')
       }
 
-      // 3. 日柱五行匹配（额外加成）
+      // 【修复2】大幅降低日柱匹配权重到+5/+3，避免日期差异过大
       const dayElement = HEAVENLY_STEM_ELEMENTS[dayBazi.day.stem]
       if (dayElement === activity.wuxing) {
-        score += 8
+        score += 5
         reasons.push('当日五行助力')
+      } else if (favorableElements.value.includes(dayElement)) {
+        score += 3
+        reasons.push('吉日')
       }
     }
   } else {
-    // 无个人信息时，使用通用时段能量
+    // 无个人信息时根据活动类型调整
     const hourData = energyStore.getHourData(hour)
     if (hourData) {
-      score = hourData.score
+      let hourScore = hourData.score
+
+      const matchesActivity = hourData.recommendedActions.some((action) =>
+        activity.keywords.some((kw) => action.includes(kw))
+      )
+
+      if (matchesActivity) {
+        hourScore += 15
+      }
+
+      score = score * 0.5 + hourScore * 0.5
     }
   }
 
-  // 4. 时段偏好匹配
-  const hourData = energyStore.getHourData(hour)
-  if (hourData) {
-    // 如果活动匹配该时段推荐
-    const isRecommended = hourData.recommendedActions.some((action) =>
-      activity.keywords.some((kw) => action.includes(kw))
-    )
-    if (isRecommended) {
-      score += 10
-      reasons.push('此时段天然适合')
+  // 【修复】大幅加强时段类型匹配权重到+20/+15
+  const hourInRange =
+    activity.timePreference === 'morning' && hour >= 8 && hour <= 12
+      ? 20
+      : activity.timePreference === 'afternoon' && hour >= 13 && hour <= 17
+        ? 20
+        : activity.timePreference === 'evening' && hour >= 18 && hour <= 21
+          ? 15
+          : activity.timePreference === 'night' && (hour >= 22 || hour <= 2)
+            ? 15
+            : 0
+
+  if (hourInRange > 0) {
+    score += hourInRange
+    const timeLabels = {
+      morning: '上午黄金时段',
+      afternoon: '下午高效时段',
+      evening: '晚间适宜时段',
+      night: '深夜安静时段'
     }
+    reasons.push(timeLabels[activity.timePreference])
   }
 
-  // 5. 时段类型加成（上午/下午/晚上）
-  if (activity.timePreference === 'morning' && hour >= 8 && hour <= 12) {
-    score += 8
-    reasons.push('上午精力旺盛')
-  } else if (activity.timePreference === 'afternoon' && hour >= 13 && hour <= 17) {
-    score += 8
-    reasons.push('下午思维清晰')
-  } else if (activity.timePreference === 'evening' && hour >= 18 && hour <= 21) {
-    score += 5
-    reasons.push('晚间氛围适合')
-  } else if (activity.timePreference === 'night' && (hour >= 22 || hour <= 2)) {
-    score += 5
-    reasons.push('深夜思维活跃')
-  }
-
-  // 深夜普遍降权（除非是night活动）
+  // 深夜降权
   if (hour >= 0 && hour <= 5 && activity.timePreference !== 'night') {
-    score -= 15
-    reasons.push('深夜能量较低')
+    score -= 20
+    reasons.push('深夜不宜此活动')
   }
 
   // 限制在 20-95 范围内
