@@ -1,0 +1,93 @@
+/* Global CSS Reset and Base Styles */
+:root {
+  /* Light Theme Colors (Default) */
+  --bg-primary: #f8fafc;   /* Slate 50 */
+  --bg-secondary: #ffffff; /* White */
+  --text-primary: #1e293b; /* Slate 800 */
+  --text-secondary: #64748b; /* Slate 500 */
+  --accent-color: #3b82f6; /* Blue 500 */
+  --accent-rgb: 59, 130, 246;
+  --accent-hover: #2563eb; /* Blue 600 */
+  --border-color: #e2e8f0; /* Slate 200 */
+  --header-text: #0f172a;  /* Slate 900 */
+  
+  /* Status Colors */
+  --success-color: #10b981; /* Emerald 500 */
+  --warning-color: #f59e0b; /* Amber 500 */
+  --danger-color: #ef4444;  /* Red 500 */
+  
+  /* Components */
+  --card-bg: #ffffff;
+  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+
+  /* Hover effects */
+  --bg-hover: #f1f5f9; /* Slate 100 */
+}
+
+[data-theme='dark'] {
+  /* Dark Theme Colors */
+  --bg-primary: #0f172a;   /* Slate 900 */
+  --bg-secondary: #1e293b; /* Slate 800 */
+  --text-primary: #f1f5f9; /* Slate 100 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --accent-color: #60a5fa; /* Blue 400 */
+  --accent-rgb: 96, 165, 250;
+  --accent-hover: #3b82f6; /* Blue 500 */
+  --border-color: #334155; /* Slate 700 */
+  --header-text: #f8fafc;  /* Slate 50 */
+  
+  /* Status Colors (Adjusted for Dark Mode) */
+  --success-color: #34d399; /* Emerald 400 */
+  --warning-color: #fbbf24; /* Amber 400 */
+  --danger-color: #f87171;  /* Red 400 */
+
+  /* Components */
+  --card-bg: #1e293b;      /* Slate 800 */
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+  
+  /* Hover effects */
+  --bg-hover: #334155; /* Slate 700 */
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Micro-animations */
+button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.card, .tab-btn {
+  transition: all 0.3s ease;
+}
+
+/* Subtle hover lift for cards */
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}

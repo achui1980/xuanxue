@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时机 - 个体化时间能量决策助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #0f172a;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            color: #0f172a;
+            border-bottom-color: #3b82f6;
+            font-weight: 600;
+        }
+        
+        .tab-btn:hover {
+            color: #1e293b;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #0f172a;
+        }
+        
+        /* Hour Bar Chart */
+        .hour-chart-container {
+            margin-bottom: 30px;
+        }
+        
+        .hour-chart {
+            display: flex;
+            align-items: end;
+            gap: 2px;
+            height: 120px;
+            padding: 0 10px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .hour-bar {
+            flex: 1;
+            background: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 2px 2px 0 0;
+            position: relative;
+        }
+        
+        .hour-bar:hover {
+            opacity: 0.8;
+        }
+        
+        .hour-bar.selected {
+            background: #3b82f6;
+            transform: scale(1.1);
+            z-index: 2;
+        }
+        
+        .hour-bar.current {
+            border: 2px solid #ef4444;
+        }
+        
+        .hour-bar.low { background: #94a3b8; }
+        .hour-bar.medium { background: #60a5fa; }
+        .hour-bar.high { background: #34d399; }
+        
+        .hour-bar.selected.low { background: #475569; }
+        .hour-bar.selected.medium { background: #3b82f6; }
+        .hour-bar.selected.high { background: #059669; }
+        
+        .hour-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 8px;
+        }
+        
+        /* Hour Detail */
+        .hour-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .hour-info {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hour-time {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        
+        .hour-score {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .hour-element {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .hour-brief {
+            color: #374151;
+        }
+        
+        /* Action Picker */
+        .action-picker {
+            margin-bottom: 30px;
+        }
+        
+        .action-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            margin-top: 10px;
+        }
+        
+        .action-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        /* Advice Cards */
+        .advice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .advice-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .advice-card.recommended {
+            border-left: 4px solid #10b981;
+        }
+        
+        .advice-card.avoid {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .advice-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .advice-title.recommended {
+            color: #059669;
+        }
+        
+        .advice-title.avoid {
+            color: #dc2626;
+        }
+        
+        .advice-list {
+            list-style: none;
+        }
+        
+        .advice-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .advice-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .advice-list li.highlight {
+            background: #fef3c7;
+            padding: 8px;
+            border-radius: 6px;
+            border-bottom: none;
+            margin: 4px 0;
+        }
+        
+        /* Result View */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .summary-card.best {
+            border-left: 4px solid #10b981;
+        }
+        
+        .summary-card.worst {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .hour-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+        
+        .hour-chip {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .hour-chip:hover {
+            background: #cbd5e1;
+        }
+        
+        .hour-chip.best {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .hour-chip.worst {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        
+        .overview-chart {
+            height: 60px;
+            margin: 20px 0;
+        }
+        
+        .overview-chart .hour-bar {
+            cursor: pointer;
+        }
+        
+        .overview-chart .hour-bar:hover {
+            transform: scaleY(1.2);
+        }
+        
+        /* Profile View */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .profile-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-field {
+            margin-bottom: 16px;
+        }
+        
+        .profile-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        
+        .profile-value {
+            color: #6b7280;
+            background: #f9fafb;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        
+        .privacy-note {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            color: #0369a1;
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hour-detail {
+                grid-template-columns: 1fr;
+            }
+            
+            .advice-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>时机</h1>
+            <p class="subtitle">个体化时间能量决策助手</p>
+        </header>
+        
+        <nav class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('today')">今日</button>
+            <button class="tab-btn" onclick="switchTab('result')">分析</button>
+            <button class="tab-btn" onclick="switchTab('profile')">个人</button>
+        </nav>
+        
+        <!-- Today Tab -->
+        <div id="today" class="tab-content active">
+            <div class="card hour-chart-container">
+                <div class="card-title">24小时能量分布 (北京时间)</div>
+                <div class="hour-chart" id="hourChart"></div>
+                <div class="hour-labels">
+                    <span>00</span>
+                    <span>03</span>
+                    <span>06</span>
+                    <span>09</span>
+                    <span>12</span>
+                    <span>15</span>
+                    <span>18</span>
+                    <span>21</span>
+                </div>
+            </div>
+            
+            <div class="hour-detail">
+                <div class="hour-info">
+                    <div class="hour-time" id="selectedHourTime">09:00-09:59</div>
+                    <div class="hour-score" id="selectedHourScore">评分：68</div>
+                    <div class="hour-element" id="selectedHourElement">适合启动任务</div>
+                    <div class="hour-brief" id="selectedHourBrief">思路相对清晰，适合处理需要专注的工作。</div>
+                </div>
+                
+                <div class="hour-info action-picker">
+                    <label for="actionSelect" style="display: block; font-weight: 600; margin-bottom: 10px;">我准备做：</label>
+                    <select id="actionSelect" class="action-select" onchange="selectAction()">
+                        <option value="">请选择行为</option>
+                        <option value="work">专注工作</option>
+                        <option value="meeting">开会谈事</option>
+                        <option value="exercise">运动健身</option>
+                        <option value="social">社交表达</option>
+                        <option value="money">投资决策</option>
+                        <option value="study">学习充电</option>
+                        <option value="travel">外出行程</option>
+                        <option value="sign">签约合作</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="advice-grid">
+                <div class="advice-card recommended">
+                    <div class="advice-title recommended">推荐行为</div>
+                    <ul class="advice-list" id="recommendedList">
+                        <li>整理任务清单</li>
+                        <li>专注工作25分钟</li>
+                        <li>回复重要消息</li>
+                    </ul>
+                </div>
+                
+                <div class="advice-card avoid">
+                    <div class="advice-title avoid">避免行为</div>
+                    <ul class="advice-list" id="avoidList">
+                        <li>做重大决策</li>
+                        <li>处理复杂关系</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Result Tab -->
+        <div id="result" class="tab-content">
+            <div class="summary-grid">
+                <div class="summary-card best">
+                    <div class="card-title">今日最佳时段</div>
+                    <div class="hour-chips" id="bestHours">
+                        <span class="hour-chip best" onclick="jumpToHour(10)">10点</span>
+                        <span class="hour-chip best" onclick="jumpToHour(11)">11点</span>
+                        <span class="hour-chip best" onclick="jumpToHour(15)">15点</span>
+                    </div>
+                </div>
+                
+                <div class="summary-card worst">
+                    <div class="card-title">今日低谷时段</div>
+                    <div class="hour-chips" id="worstHours">
+                        <span class="hour-chip worst" onclick="jumpToHour(2)">02点</span>
+                        <span class="hour-chip worst" onclick="jumpToHour(14)">14点</span>
+                        <span class="hour-chip worst" onclick="jumpToHour(22)">22点</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">能量分布概览</div>
+                <div class="hour-chart overview-chart" id="overviewChart"></div>
+                <div class="hour-labels">
+                    <span>00</span>
+                    <span>03</span>
+                    <span>06</span>
+                    <span>09</span>
+                    <span>12</span>
+                    <span>15</span>
+                    <span>18</span>
+                    <span>21</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">今日建议</div>
+                <p>上午中段（10-11点）更适合推进重要任务，下午15点是第二个高峰期。建议避开14点和22点进行重要决策。</p>
+            </div>
+        </div>
+        
+        <!-- Profile Tab -->
+        <div id="profile" class="tab-content">
+            <div class="profile-grid">
+                <div class="profile-section">
+                    <div class="card-title">基本信息</div>
+                    <div class="profile-field">
+                        <label class="profile-label">昵称</label>
+                        <div class="profile-value">用户A</div>
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">时区</label>
+                        <div class="profile-value">北京时间 (UTC+8)</div>
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">五行偏向</label>
+                        <div class="profile-value">水旺火弱，喜火金</div>
+                    </div>
+                </div>
+                
+                <div class="profile-section">
+                    <div class="card-title">偏好设置</div>
+                    <div class="profile-field">
+                        <label class="profile-label">目标类型</label>
+                        <div class="profile-value">专注工作</div>
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">强度偏好</label>
+                        <div class="profile-value">平衡</div>
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">喜用神</label>
+                        <div class="profile-value">火、金</div>
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">忌神</label>
+                        <div class="profile-value">水</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="privacy-note">
+                <strong>隐私保护：</strong>所有数据仅存储在您的浏览器本地，不会上传到服务器。您的个人信息完全私密安全。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data
+        const mockData = {
+            profile: {
+                name: "用户A",
+                timezone: "Asia/Shanghai",
+                wuxing: { wood: 18, fire: 12, earth: 25, metal: 28, water: 45 },
+                favorable: ["火", "金"],
+                unfavorable: ["水"],
+                summary: "水旺火弱，喜火金"
+            },
+            actionLibrary: [
+                { id: "work", label: "专注工作" },
+                { id: "meeting", label: "开会谈事" },
+                { id: "exercise", label: "运动健身" },
+                { id: "social", label: "社交表达" },
+                { id: "money", label: "投资决策" },
+                { id: "study", label: "学习充电" },
+                { id: "travel", label: "外出行程" },
+                { id: "sign", label: "签约合作" }
+            ],
+            hours: [
+                { hour: 0, rangeLabel: "00:00-00:59", score: 25, elementHint: "宜静养", brief: "适合睡眠休息，避免剧烈活动。", recommendedActions: ["冥想", "轻松阅读"], avoidActions: ["剧烈运动", "重要决策"] },
+                { hour: 1, rangeLabel: "01:00-01:59", score: 20, elementHint: "深度休息", brief: "身心最需要休息的时段。", recommendedActions: ["深度睡眠"], avoidActions: ["任何活动"] },
+                { hour: 2, rangeLabel: "02:00-02:59", score: 15, elementHint: "低谷期", brief: "能量最低，不宜安排任何重要事务。", recommendedActions: ["睡眠"], avoidActions: ["工作", "决策", "运动"] },
+                { hour: 3, rangeLabel: "03:00-03:59", score: 18, elementHint: "渐复苏", brief: "能量开始缓慢恢复。", recommendedActions: ["继续睡眠"], avoidActions: ["重体力活动"] },
+                { hour: 4, rangeLabel: "04:00-04:59", score: 22, elementHint: "早起适宜", brief: "适合早起人群的轻度活动。", recommendedActions: ["轻度冥想", "拉伸"], avoidActions: ["剧烈运动"] },
+                { hour: 5, rangeLabel: "05:00-05:59", score: 30, elementHint: "渐入状态", brief: "思维开始清晰，适合轻度准备工作。", recommendedActions: ["晨间规划", "轻度运动"], avoidActions: ["复杂决策"] },
+                { hour: 6, rangeLabel: "06:00-06:59", score: 45, elementHint: "晨间活力", brief: "适合开始一天的准备工作。", recommendedActions: ["晨练", "整理思路"], avoidActions: ["情感谈话"] },
+                { hour: 7, rangeLabel: "07:00-07:59", score: 55, elementHint: "精神饱满", brief: "思维清晰，适合处理重要但不复杂的事务。", recommendedActions: ["重要沟通", "规划制定"], avoidActions: ["冲动决策"] },
+                { hour: 8, rangeLabel: "08:00-08:59", score: 62, elementHint: "工作启动", brief: "适合开始工作状态，处理日常事务。", recommendedActions: ["邮件处理", "日程安排"], avoidActions: ["重大签约"] },
+                { hour: 9, rangeLabel: "09:00-09:59", score: 68, elementHint: "适合启动", brief: "思路相对清晰，适合处理需要专注的工作。", recommendedActions: ["专注工作", "重要任务"], avoidActions: ["情感决策"] },
+                { hour: 10, rangeLabel: "10:00-10:59", score: 82, elementHint: "黄金时段", brief: "一天中的第一个能量高峰，适合处理重要事务。", recommendedActions: ["重要会议", "关键决策", "创意工作"], avoidActions: ["琐碎事务"] },
+                { hour: 11, rangeLabel: "11:00-11:59", score: 78, elementHint: "持续高效", brief: "延续上午的高能量状态。", recommendedActions: ["深度工作", "重要谈判"], avoidActions: ["分散注意力的活动"] },
+                { hour: 12, rangeLabel: "12:00-12:59", score: 65, elementHint: "需要平衡", brief: "能量开始下降，需要适当休息。", recommendedActions: ["用餐", "轻松交流"], avoidActions: ["高强度工作"] },
+                { hour: 13, rangeLabel: "13:00-13:59", score: 58, elementHint: "餐后调整", brief: "用餐后需要时间消化调整。", recommendedActions: ["轻度活动", "午休"], avoidActions: ["重要会议"] },
+                { hour: 14, rangeLabel: "14:00-14:59", score: 42, elementHint: "低谷期", brief: "下午低谷期，容易疲倦分神。", recommendedActions: ["休息", "轻松阅读"], avoidActions: ["重要决策", "复杂工作"] },
+                { hour: 15, rangeLabel: "15:00-15:59", score: 72, elementHint: "下午高峰", brief: "下午的能量回升期，适合推进重要工作。", recommendedActions: ["重要项目", "关键沟通"], avoidActions: ["琐碎杂务"] },
+                { hour: 16, rangeLabel: "16:00-16:59", score: 69, elementHint: "稳定推进", brief: "能量稳定，适合持续性工作。", recommendedActions: ["专注任务", "团队协作"], avoidActions: ["情绪化决策"] },
+                { hour: 17, rangeLabel: "17:00-17:59", score: 63, elementHint: "收尾阶段", brief: "适合总结和收尾工作。", recommendedActions: ["工作总结", "明日规划"], avoidActions: ["新项目启动"] },
+                { hour: 18, rangeLabel: "18:00-18:59", score: 56, elementHint: "转换模式", brief: "从工作模式向生活模式转换。", recommendedActions: ["轻松活动", "社交"], avoidActions: ["高强度工作"] },
+                { hour: 19, rangeLabel: "19:00-19:59", score: 52, elementHint: "社交时光", brief: "适合社交和轻松的个人活动。", recommendedActions: ["社交聚会", "兴趣爱好"], avoidActions: ["复杂思考"] },
+                { hour: 20, rangeLabel: "20:00-20:59", score: 48, elementHint: "放松时段", brief: "身心开始放松，准备结束一天。", recommendedActions: ["娱乐", "轻度运动"], avoidActions: ["工作", "学习"] },
+                { hour: 21, rangeLabel: "21:00-21:59", score: 40, elementHint: "准备休息", brief: "开始准备休息，避免刺激性活动。", recommendedActions: ["阅读", "音乐"], avoidActions: ["激烈运动", "重要决策"] },
+                { hour: 22, rangeLabel: "22:00-22:59", score: 32, elementHint: "睡前准备", brief: "准备睡眠，让身心逐渐安静下来。", recommendedActions: ["轻松阅读", "冥想"], avoidActions: ["工作", "刺激性活动"] },
+                { hour: 23, rangeLabel: "23:00-23:59", score: 28, elementHint: "入睡时机", brief: "最佳入睡时间，让身体进入休息状态。", recommendedActions: ["睡眠准备"], avoidActions: ["任何兴奋性活动"] }
+            ]
+        };
+        
+        // State
+        let currentTab = 'today';
+        let selectedHour = getCurrentBeijingHour();
+        let selectedAction = '';
+        
+        // Get current Beijing hour
+        function getCurrentBeijingHour() {
+            try {
+                const now = new Date();
+                const beijingTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Shanghai"}));
+                return beijingTime.getHours();
+            } catch (e) {
+                return 9; // fallback
+            }
+        }
+        
+        // Initialize page
+        function init() {
+            renderHourChart();
+            renderOverviewChart();
+            updateHourDetail();
+            updateAdviceCards();
+        }
+        
+        // Tab switching
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            
+            currentTab = tab;
+            
+            if (tab === 'result') {
+                renderOverviewChart();
+            }
+        }
+        
+        // Render hour chart
+        function renderHourChart() {
+            const chartContainer = document.getElementById('hourChart');
+            chartContainer.innerHTML = '';
+            
+            mockData.hours.forEach((hour, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'hour-bar';
+                
+                // Set height based on score
+                const height = Math.max(8, (hour.score / 100) * 100);
+                bar.style.height = height + 'px';
+                
+                // Set color based on score
+                if (hour.score >= 70) {
+                    bar.classList.add('high');
+                } else if (hour.score >= 50) {
+                    bar.classList.add('medium');
+                } else {
+                    bar.classList.add('low');
+                }
+                
+                // Mark selected hour
+                if (index === selectedHour) {
+                    bar.classList.add('selected');
+                }
+                
+                // Mark current hour
+                if (index === getCurrentBeijingHour()) {
+                    bar.classList.add('current');
+                }
+                
+                bar.onclick = () => selectHour(index);
+                chartContainer.appendChild(bar);
+            });
+        }
+        
+        // Render overview chart (for Result tab)
+        function renderOverviewChart() {
+            const chartContainer = document.getElementById('overviewChart');
+            if (!chartContainer) return;
+            
+            chartContainer.innerHTML = '';
+            
+            mockData.hours.forEach((hour, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'hour-bar';
+                
+                const height = Math.max(4, (hour.score / 100) * 50);
+                bar.style.height = height + 'px';
+                
+                if (hour.score >= 70) {
+                    bar.classList.add('high');
+                } else if (hour.score >= 50) {
+                    bar.classList.add('medium');
+                } else {
+                    bar.classList.add('low');
+                }
+                
+                bar.onclick = () => jumpToHour(index);
+                chartContainer.appendChild(bar);
+            });
+        }
+        
+        // Select hour
+        function selectHour(hour) {
+            selectedHour = hour;
+            renderHourChart();
+            updateHourDetail();
+            updateAdviceCards();
+        }
+        
+        // Jump to hour (from Result view)
+        function jumpToHour(hour) {
+            selectedHour = hour;
+            switchTab('today');
+            // Update tab button state
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.tab-btn[onclick="switchTab(\'today\')"]').classList.add('active');
+            renderHourChart();
+            updateHourDetail();
+            updateAdviceCards();
+        }
+        
+        // Update hour detail
+        function updateHourDetail() {
+            const hour = mockData.hours[selectedHour];
+            document.getElementById('selectedHourTime').textContent = hour.rangeLabel;
+            document.getElementById('selectedHourScore').textContent = `评分：${hour.score}`;
+            document.getElementById('selectedHourElement').textContent = hour.elementHint;
+            document.getElementById('selectedHourBrief').textContent = hour.brief;
+        }
+        
+        // Select action
+        function selectAction() {
+            const select = document.getElementById('actionSelect');
+            selectedAction = select.value;
+            updateAdviceCards();
+        }
+        
+        // Update advice cards
+        function updateAdviceCards() {
+            const hour = mockData.hours[selectedHour];
+            
+            // Update recommended actions
+            const recommendedList = document.getElementById('recommendedList');
+            recommendedList.innerHTML = '';
+            hour.recommendedActions.forEach(action => {
+                const li = document.createElement('li');
+                li.textContent = action;
+                
+                // Highlight if matches selected action
+                if (selectedAction && action.includes(getActionLabel(selectedAction))) {
+                    li.classList.add('highlight');
+                }
+                
+                recommendedList.appendChild(li);
+            });
+            
+            // Update avoid actions
+            const avoidList = document.getElementById('avoidList');
+            avoidList.innerHTML = '';
+            hour.avoidActions.forEach(action => {
+                const li = document.createElement('li');
+                li.textContent = action;
+                
+                // Highlight if matches selected action
+                if (selectedAction && action.includes(getActionLabel(selectedAction))) {
+                    li.classList.add('highlight');
+                }
+                
+                avoidList.appendChild(li);
+            });
+        }
+        
+        // Get action label by id
+        function getActionLabel(actionId) {
+            const action = mockData.actionLibrary.find(a => a.id === actionId);
+            return action ? action.label : '';
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
