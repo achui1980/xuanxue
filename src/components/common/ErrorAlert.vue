@@ -1,21 +1,24 @@
 <template>
-  <div v-if="visible" class="error-alert" :class="type">
-    <div class="icon">
-      <span v-if="type === 'error'">⚠️</span>
-      <span v-else>ℹ️</span>
+  <Transition name="slide">
+    <div v-if="visible" class="error-alert" :class="type">
+      <div class="icon">
+        <AppIcon v-if="type === 'error'" name="warning" size="lg" />
+        <AppIcon v-else name="info" size="lg" />
+      </div>
+      <div class="content">
+        <h3 v-if="title" class="title">{{ title }}</h3>
+        <p class="message">{{ message }}</p>
+      </div>
+      <button v-if="dismissible" @click="dismiss" class="close-btn" aria-label="Close">
+        <AppIcon name="close" size="md" />
+      </button>
     </div>
-    <div class="content">
-      <h3 v-if="title" class="title">{{ title }}</h3>
-      <p class="message">{{ message }}</p>
-    </div>
-    <button v-if="dismissible" @click="dismiss" class="close-btn" aria-label="Close">
-      &times;
-    </button>
-  </div>
+  </Transition>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const props = defineProps({
   title: {
@@ -28,7 +31,7 @@ const props = defineProps({
   },
   type: {
     type: String,
-    default: 'error', // 'error', 'warning', 'info'
+    default: 'error',
     validator: (value) => ['error', 'warning', 'info'].includes(value)
   },
   dismissible: {
@@ -51,34 +54,33 @@ function dismiss() {
 .error-alert {
   display: flex;
   align-items: flex-start;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
   border: 1px solid transparent;
-  animation: slideIn 0.3s ease-out;
 }
 
 .error-alert.error {
-  background-color: #fef2f2;
-  border-color: #fee2e2;
-  color: #991b1b;
+  background-color: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: var(--fire);
 }
 
 .error-alert.warning {
-  background-color: #fffbeb;
-  border-color: #fef3c7;
-  color: #92400e;
+  background-color: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: var(--earth);
 }
 
 .error-alert.info {
-  background-color: #eff6ff;
-  border-color: #dbeafe;
-  color: #1e40af;
+  background-color: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.3);
+  color: var(--water);
 }
 
 .icon {
-  margin-right: 0.75rem;
-  font-size: 1.25rem;
+  margin-right: var(--space-3);
+  flex-shrink: 0;
 }
 
 .content {
@@ -86,59 +88,51 @@ function dismiss() {
 }
 
 .title {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  font-size: 1rem;
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-1);
+  font-size: var(--text-base);
+  color: inherit;
 }
 
 .message {
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+  color: var(--text-primary);
 }
 
 .close-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1.5rem;
-  line-height: 1;
   color: inherit;
   opacity: 0.6;
-  padding: 0 0.5rem;
-  margin-left: 0.5rem;
+  padding: var(--space-1);
+  margin-left: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--transition-fast);
 }
 
 .close-btn:hover {
   opacity: 1;
 }
 
-/* Dark mode overrides (assuming parent has data-theme='dark') */
-:global([data-theme='dark']) .error-alert.error {
-  background-color: #450a0a;
-  border-color: #7f1d1d;
-  color: #fecaca;
+/* Transitions */
+.slide-enter-active,
+.slide-leave-active {
+  transition: all var(--transition-base);
+  max-height: 200px;
+  opacity: 1;
 }
 
-:global([data-theme='dark']) .error-alert.warning {
-  background-color: #451a03;
-  border-color: #78350f;
-  color: #fde68a;
-}
-
-:global([data-theme='dark']) .error-alert.info {
-  background-color: #172554;
-  border-color: #1e3a8a;
-  color: #bfdbfe;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  margin-bottom: 0;
+  overflow: hidden;
 }
 </style>

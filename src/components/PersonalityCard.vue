@@ -1,18 +1,20 @@
 <template>
-  <div class="personality-card" v-if="hasBirthInfo">
-    <div class="personality-header">
-      <div class="personality-avatar" :class="`wuxing-${dominantElement}`">
-        <span class="avatar-emoji">{{ getAvatarEmoji() }}</span>
-      </div>
-      <div class="personality-title">
-        <h3 class="personality-name">{{ personalityName }}</h3>
-        <div class="personality-tags">
-          <span v-for="tag in personalityTags" :key="tag" class="tag">
-            {{ tag }}
-          </span>
+  <BaseCard v-if="hasBirthInfo" class="personality-card" elevated>
+    <template #header>
+      <div class="personality-header">
+        <div class="personality-avatar" :class="`wuxing-${dominantElement}`">
+          <ElementIcon :element="dominantElement" size="xl" />
+        </div>
+        <div class="personality-title">
+          <h3 class="personality-name">{{ personalityName }}</h3>
+          <div class="personality-tags">
+            <span v-for="tag in personalityTags" :key="tag" class="tag">
+              {{ tag }}
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <div class="personality-description">
       <p class="description-text">{{ personalityDescription }}</p>
@@ -26,7 +28,10 @@
         >
       </div>
       <p class="day-master-traits">{{ dayMasterInfo.traits }}</p>
-      <p class="day-master-advice">💡 {{ dayMasterInfo.advice }}</p>
+      <p class="day-master-advice">
+        <AppIcon name="lightbulb" size="sm" />
+        {{ dayMasterInfo.advice }}
+      </p>
     </div>
 
     <div class="best-for-section">
@@ -37,7 +42,7 @@
         </span>
       </div>
       <div class="best-time">
-        <span class="time-icon">🕐</span>
+        <AppIcon name="clock" size="sm" />
         <span class="time-text">最佳时段：{{ bestTimeOfDay }}</span>
       </div>
     </div>
@@ -62,7 +67,7 @@
               class="wuxing-bar-fill"
               :style="{ width: getWuxingPercent(item.value) + '%' }"
               :class="`wuxing-${item.key}`"
-            ></div>
+            />
           </div>
           <span class="wuxing-value">{{ item.value }}</span>
         </div>
@@ -71,26 +76,33 @@
 
     <div class="favorable-section">
       <div class="favorable-row">
-        <span class="favorable-label favorable">喜用神</span>
+        <span class="favorable-label good">喜用神</span>
         <span class="favorable-content">{{ favorableElements.join('、') || '未计算' }}</span>
       </div>
       <div class="favorable-row">
-        <span class="favorable-label unfavorable">忌神</span>
+        <span class="favorable-label bad">忌神</span>
         <span class="favorable-content">{{ unfavorableElements.join('、') || '未计算' }}</span>
       </div>
     </div>
-  </div>
+  </BaseCard>
 
-  <div v-else class="personality-empty">
-    <div class="empty-icon">👤</div>
-    <p class="empty-text">完善出生信息，解锁你的五行人格画像</p>
-    <button class="empty-action" @click="scrollToBirthForm">去填写</button>
-  </div>
+  <BaseCard v-else class="personality-empty" elevated>
+    <div class="empty-content">
+      <div class="empty-icon">
+        <AppIcon name="user" size="xl" />
+      </div>
+      <p class="empty-text">完善出生信息，解锁你的五行人格画像</p>
+      <button class="btn btn-primary" @click="scrollToBirthForm">去填写</button>
+    </div>
+  </BaseCard>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { usePersonality } from '@/composables/usePersonality'
+import BaseCard from '@/components/common/BaseCard.vue'
+import ElementIcon from '@/components/icons/ElementIcon.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const {
   hasBirthInfo,
@@ -112,38 +124,20 @@ const personalityName = computed(() => {
   return `${dayMasterInfo.value.name} · ${personalityTags.value[0] || ''}`
 })
 
-function getAvatarEmoji() {
-  const emojis = {
-    wood: '🌳',
-    fire: '☀️',
-    earth: '⛰️',
-    metal: '⚔️',
-    water: '🌊'
-  }
-  return emojis[dominantElement.value] || '✨'
-}
-
 function scrollToBirthForm() {
-  // Emit event to parent to scroll to birth form
-  // This will be handled by ProfileTab
   window.dispatchEvent(new CustomEvent('scroll-to-birth-form'))
 }
 </script>
 
 <style scoped>
 .personality-card {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .personality-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--space-4);
 }
 
 .personality-avatar {
@@ -153,39 +147,34 @@ function scrollToBirthForm() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
-  background: var(--bg-secondary);
-  border: 3px solid var(--border-color);
+  background: var(--bg-elevated);
+  border: 3px solid var(--border-light);
   flex-shrink: 0;
 }
 
 .personality-avatar.wuxing-wood {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: var(--success-color);
+  background: rgba(74, 222, 128, 0.1);
+  border-color: var(--wood);
 }
 
 .personality-avatar.wuxing-fire {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: var(--danger-color);
+  background: rgba(248, 113, 113, 0.1);
+  border-color: var(--fire);
 }
 
 .personality-avatar.wuxing-earth {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: var(--warning-color);
+  background: rgba(251, 191, 36, 0.1);
+  border-color: var(--earth);
 }
 
 .personality-avatar.wuxing-metal {
-  background: rgba(148, 163, 184, 0.2);
-  border-color: #94a3b8;
+  background: rgba(232, 196, 102, 0.15);
+  border-color: var(--metal);
 }
 
 .personality-avatar.wuxing-water {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: var(--accent-color);
-}
-
-.avatar-emoji {
-  line-height: 1;
+  background: rgba(96, 165, 250, 0.1);
+  border-color: var(--water);
 }
 
 .personality-title {
@@ -193,220 +182,227 @@ function scrollToBirthForm() {
 }
 
 .personality-name {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--header-text);
-  margin: 0 0 8px 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2) 0;
 }
 
 .personality-tags {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .tag {
-  background: rgba(var(--accent-rgb), 0.1);
-  color: var(--accent-color);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  background: rgba(96, 165, 250, 0.1);
+  color: var(--water);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
 }
 
 .personality-description {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
+  margin: var(--space-5) 0;
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
 }
 
 .description-text {
   margin: 0;
   color: var(--text-primary);
-  line-height: 1.6;
-  font-size: 1rem;
+  line-height: var(--leading-relaxed);
+  font-size: var(--text-base);
 }
 
 .day-master-section {
-  margin-bottom: 20px;
-  padding: 16px;
-  border-left: 4px solid var(--accent-color);
-  background: rgba(var(--accent-rgb), 0.05);
-  border-radius: 0 12px 12px 0;
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  border-left: 4px solid var(--water);
+  background: rgba(96, 165, 250, 0.05);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 }
 
 .day-master-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .day-master-label {
-  background: var(--accent-color);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: var(--water);
+  color: var(--ink-black);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
 }
 
 .day-master-value {
-  font-weight: 700;
-  color: var(--header-text);
-  font-size: 1.1rem;
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  font-size: var(--text-lg);
+  font-family: var(--font-display);
 }
 
 .day-master-traits {
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-2) 0;
   color: var(--text-primary);
-  font-size: 0.95rem;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
 }
 
 .day-master-advice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-style: italic;
 }
 
+.day-master-advice svg {
+  flex-shrink: 0;
+  color: var(--metal);
+}
+
 .best-for-section {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .section-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-3);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .best-activities {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .activity-tag {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-color);
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  background: rgba(74, 222, 128, 0.1);
+  color: var(--wood);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
 }
 
 .best-time {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
-  color: var(--text-primary);
-}
-
-.time-icon {
-  font-size: 1.1rem;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
 .characteristics-section {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
 }
 
 .characteristics-text {
   margin: 0;
   color: var(--text-primary);
-  line-height: 1.6;
-  font-size: 0.95rem;
+  line-height: var(--leading-relaxed);
+  font-size: var(--text-sm);
 }
 
 .wuxing-visualization {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .wuxing-bars {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .wuxing-bar-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .wuxing-bar-item.dominant {
-  background: rgba(var(--accent-rgb), 0.05);
-  padding: 8px;
-  border-radius: 8px;
-  margin: -4px -8px;
+  background: rgba(232, 196, 102, 0.05);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  margin: calc(-1 * var(--space-2));
 }
 
 .wuxing-name {
   width: 24px;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
+  font-family: var(--font-display);
 }
 
 .wuxing-bar-container {
   flex: 1;
   height: 24px;
-  background: var(--bg-secondary);
-  border-radius: 4px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .wuxing-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: width 0.5s ease;
   min-width: 4px;
 }
 
 .wuxing-bar-fill.wuxing-wood {
-  background: var(--success-color);
+  background: var(--wood);
 }
 .wuxing-bar-fill.wuxing-fire {
-  background: var(--danger-color);
+  background: var(--fire);
 }
 .wuxing-bar-fill.wuxing-earth {
-  background: var(--warning-color);
+  background: var(--earth);
 }
 .wuxing-bar-fill.wuxing-metal {
-  background: #94a3b8;
+  background: var(--metal);
 }
 .wuxing-bar-fill.wuxing-water {
-  background: var(--accent-color);
+  background: var(--water);
 }
 
 .wuxing-value {
   width: 32px;
   text-align: right;
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 .favorable-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 .favorable-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.9rem;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
 }
 
 .favorable-label {
@@ -414,62 +410,48 @@ function scrollToBirthForm() {
   align-items: center;
   justify-content: center;
   width: 56px;
-  padding: 4px 0;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  padding: var(--space-1) 0;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
 }
 
-.favorable-label.favorable {
-  background: rgba(16, 185, 129, 0.15);
-  color: var(--success-color);
+.favorable-label.good {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--wood);
 }
 
-.favorable-label.unfavorable {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--danger-color);
+.favorable-label.bad {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--fire);
 }
 
 .favorable-content {
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
 /* Empty State */
 .personality-empty {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 48px 24px;
-  box-shadow: var(--card-shadow);
+  margin-bottom: var(--space-6);
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-10) var(--space-5);
   text-align: center;
-  margin-bottom: 24px;
 }
 
 .empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  color: var(--text-tertiary);
 }
 
 .empty-text {
   color: var(--text-secondary);
-  margin: 0 0 20px 0;
-  font-size: 1rem;
-}
-
-.empty-action {
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.empty-action:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
+  margin: 0;
 }
 
 @media (max-width: 768px) {
@@ -481,7 +463,6 @@ function scrollToBirthForm() {
   .personality-avatar {
     width: 64px;
     height: 64px;
-    font-size: 32px;
   }
 }
 </style>

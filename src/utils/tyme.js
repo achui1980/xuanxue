@@ -675,3 +675,246 @@ export function getAvoidActivitiesByElement(element) {
 
   return avoidActivities[element] || []
 }
+
+/**
+ * 获取每日黄历宜忌信息
+ * @param {Date} date - 目标日期
+ * @returns {Object} 宜忌信息 { recommends: [], avoids: [] }
+ */
+export function getAlmanacInfo(date = new Date()) {
+  try {
+    const solarDay = SolarDay.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate())
+    const sixtyCycleDay = solarDay.getSixtyCycleDay()
+
+    // 获取宜做的事情
+    const recommends = sixtyCycleDay.getRecommends().map((item) => ({
+      name: item.getName(),
+      icon: getActivityIcon(item.getName())
+    }))
+
+    // 获取忌做的事情
+    const avoids = sixtyCycleDay.getAvoids().map((item) => ({
+      name: item.getName(),
+      icon: getActivityIcon(item.getName())
+    }))
+
+    return {
+      recommends: recommends.slice(0, 5), // 最多显示5个
+      avoids: avoids.slice(0, 5)
+    }
+  } catch (error) {
+    console.error('获取黄历信息失败:', error)
+    return { recommends: [], avoids: [] }
+  }
+}
+
+/**
+ * 获取节气信息
+ * @param {Date} date - 目标日期
+ * @returns {Object} 节气信息 { current: string, next: string, daysUntil: number }
+ */
+export function getTermInfo(date = new Date()) {
+  try {
+    const solarDay = SolarDay.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate())
+
+    // 当前节气
+    const currentTerm = solarDay.getTerm()
+    const current = currentTerm ? currentTerm.getName() : null
+
+    // 下一节气 - 通过遍历查找
+    let next = null
+    let daysUntil = 0
+
+    if (currentTerm) {
+      // 获取下一个节气
+      const nextTerm = currentTerm.next(1)
+      if (nextTerm) {
+        next = nextTerm.getName()
+        // 计算天数差
+        const nextTermSolarDay = nextTerm.getSolarDay()
+        if (nextTermSolarDay) {
+          daysUntil = nextTermSolarDay.subtract(solarDay)
+        }
+      }
+    }
+
+    return {
+      current,
+      next,
+      daysUntil
+    }
+  } catch (error) {
+    console.error('获取节气信息失败:', error)
+    return { current: null, next: null, daysUntil: 0 }
+  }
+}
+
+/**
+ * 获取节日信息
+ * @param {Date} date - 目标日期
+ * @returns {Object} 节日信息 { festivals: [], isHoliday: boolean }
+ */
+export function getFestivalInfo(date = new Date()) {
+  try {
+    const solarDay = SolarDay.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate())
+    const lunarDay = solarDay.getLunarDay()
+
+    const festivals = []
+
+    // 获取农历节日（单数）
+    const lunarFestival = lunarDay.getFestival()
+    if (lunarFestival) {
+      festivals.push(lunarFestival.getName())
+    }
+
+    // 获取公历节日（单数）
+    const solarFestival = solarDay.getFestival()
+    if (solarFestival) {
+      festivals.push(solarFestival.getName())
+    }
+
+    // 中国传统节日列表
+    const traditionalFestivals = [
+      '春节',
+      '元宵',
+      '端午',
+      '七夕',
+      '中元',
+      '中秋',
+      '重阳',
+      '腊八',
+      '除夕'
+    ]
+    const isTraditional = festivals.some((f) => traditionalFestivals.some((tf) => f.includes(tf)))
+
+    return {
+      festivals,
+      isTraditional,
+      hasFestival: festivals.length > 0
+    }
+  } catch (error) {
+    console.error('获取节日信息失败:', error)
+    return { festivals: [], isTraditional: false, hasFestival: false }
+  }
+}
+
+/**
+ * 获取活动对应的 emoji 图标
+ * @param {string} activityName - 活动名称
+ * @returns {string} emoji 图标
+ */
+function getActivityIcon(activityName) {
+  const iconMap = {
+    嫁娶: '💒',
+    祭祀: '🕯️',
+    祈福: '🙏',
+    求嗣: '👶',
+    出行: '✈️',
+    交易: '💰',
+    立券: '📜',
+    动土: '🚧',
+    安床: '🛏️',
+    破土: '⛏️',
+    安葬: '⚰️',
+    修造: '🔨',
+    拆卸: '🏚️',
+    起基: '🏗️',
+    入宅: '🏠',
+    移徙: '🚚',
+    纳采: '💍',
+    问名: '📋',
+    纳婿: '🤵',
+    归宁: '👰',
+    冠笄: '👑',
+    进人口: '👨‍👩‍👧‍👦',
+    入学: '🎓',
+    沐浴: '🛁',
+    裁衣: '👕',
+    结网: '🕸️',
+    取渔: '🎣',
+    捕捉: '🎯',
+    畋猎: '🏹',
+    纳畜: '🐄',
+    牧养: '🐑',
+    开渠: '🌊',
+    放水: '💧',
+    修坟: '🪦',
+    除服: '⚪',
+    成服: '⚫',
+    移柩: '⚰️',
+    启钻: '💎',
+    谢土: '🙇',
+    斋醮: '📿',
+    开仓: '🏚️',
+    出货财: '💵',
+    经络: '🧵',
+    酝酿: '🍶',
+    伐木: '🪵',
+    栽种: '🌱',
+    会亲友: '👥',
+    竖柱: '🏛️',
+    上梁: '🏗️',
+    纳财: '💵',
+    赴任: '💼',
+    词讼: '⚖️',
+    补垣: '🧱',
+    塞穴: '🕳️',
+    筑堤: '🏔️',
+    修饰垣墙: '🎨',
+    平治道涂: '🛣️',
+    整手足甲: '💅',
+    求医: '🏥',
+    治病: '💊',
+    安机械: '⚙️',
+    造车器: '🚗',
+    掘井: '⛏️',
+    开柱眼: '👁️',
+    造桥: '🌉',
+    作厕: '🚽',
+    造仓: '🏚️',
+    造畜稠: '🐷',
+    教牛马: '🐂',
+    造屋: '🏠',
+    合帐: '🛏️',
+    开厕: '🚪',
+    断蚁: '🐜'
+  }
+
+  return iconMap[activityName] || '•'
+}
+
+/**
+ * 获取节气对应的 emoji 图标
+ * @param {string} termName - 节气名称
+ * @returns {string} emoji 图标
+ */
+export function getTermIcon(termName) {
+  const termIconMap = {
+    立春: '🌱',
+    雨水: '🌧️',
+    惊蛰: '🐛',
+    春分: '🌸',
+    清明: '🌿',
+    谷雨: '🌾',
+    立夏: '☀️',
+    小满: '🌾',
+    芒种: '🌾',
+    夏至: '☀️',
+    小暑: '🌞',
+    大暑: '🔥',
+    立秋: '🍂',
+    处暑: '🍃',
+    白露: '💧',
+    秋分: '🍁',
+    寒露: '🌾',
+    霜降: '❄️',
+    立冬: '🧥',
+    小雪: '❄️',
+    大雪: '☃️',
+    冬至: '🧣',
+    小寒: '❄️',
+    大寒: '🥶'
+  }
+
+  return termIconMap[termName] || '🌤️'
+}

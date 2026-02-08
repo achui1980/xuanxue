@@ -1,14 +1,14 @@
 <template>
-  <div class="best-timing-query">
-    <div class="query-header">
-      <h3 class="query-title">最佳时机查询</h3>
-      <p class="query-subtitle">我想做某事，未来7天什么时候最好？</p>
-    </div>
+  <BaseCard class="best-timing-query" elevated>
+    <template #header>
+      <h3 class="card-title">最佳时机查询</h3>
+      <p class="card-subtitle">我想做某事，未来7天什么时候最好？</p>
+    </template>
 
     <div class="query-form">
       <div class="form-row">
         <label class="form-label">我想</label>
-        <select v-model="selectedActivity" class="activity-select">
+        <select v-model="selectedActivity" class="input select">
           <option value="">选择一个事项...</option>
           <option v-for="activity in activityOptions" :key="activity.id" :value="activity.id">
             {{ activity.label }}
@@ -34,7 +34,8 @@
         </div>
       </div>
 
-      <button class="query-btn" @click="executeQuery" :disabled="!selectedActivity">
+      <button class="btn btn-primary btn-full" @click="executeQuery" :disabled="!selectedActivity">
+        <AppIcon name="search" size="sm" />
         查询最佳时机
       </button>
     </div>
@@ -54,9 +55,15 @@
           :class="{ top: index === 0 }"
         >
           <div class="result-rank">
-            <span v-if="index === 0" class="rank-badge gold">🥇</span>
-            <span v-else-if="index === 1" class="rank-badge silver">🥈</span>
-            <span v-else-if="index === 2" class="rank-badge bronze">🥉</span>
+            <span v-if="index === 0" class="rank-badge gold">
+              <AppIcon name="trophy" size="lg" />
+            </span>
+            <span v-else-if="index === 1" class="rank-badge silver">
+              <AppIcon name="medal" size="lg" />
+            </span>
+            <span v-else-if="index === 2" class="rank-badge bronze">
+              <AppIcon name="medal" size="lg" />
+            </span>
             <span v-else class="rank-number">{{ index + 1 }}</span>
           </div>
 
@@ -77,18 +84,24 @@
             </div>
           </div>
 
-          <button class="result-action" @click="jumpToTime(result)">查看</button>
+          <button class="btn btn-primary btn-sm result-action" @click="jumpToTime(result)">
+            查看
+          </button>
         </div>
       </div>
 
-      <div class="results-tip">💡 建议优先选择前3个时段，匹配度越高，成功率越大</div>
+      <div class="results-tip">
+        <AppIcon name="lightbulb" size="sm" />
+        <span>建议优先选择前3个时段，匹配度越高，成功率越大</span>
+      </div>
     </div>
 
     <!-- 无结果提示 -->
     <div v-else-if="hasQueried" class="no-results">
+      <AppIcon name="info" size="lg" />
       <p>未找到合适的时段，建议调整时间段偏好或更换活动类型</p>
     </div>
-  </div>
+  </BaseCard>
 </template>
 
 <script setup>
@@ -98,6 +111,8 @@ import { useAppStore } from '@/stores/app'
 import { usePersonality } from '@/composables/usePersonality'
 import { useEnergyStore } from '@/stores/energy'
 import { calculateBaZi, calculateHourEnergy, HEAVENLY_STEM_ELEMENTS } from '@/utils/tyme'
+import BaseCard from '@/components/common/BaseCard.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const userStore = useUserStore()
 const appStore = useAppStore()
@@ -114,7 +129,7 @@ const timePrefs = ref({
   evening: false
 })
 
-// 活动选项（简化版，与EnergyClock对应）
+// 活动选项
 const activityOptions = [
   { id: 'work', label: '专注工作', wuxing: 'wood', keywords: ['专注', '深度', '工作'] },
   { id: 'meeting', label: '开会沟通', wuxing: 'fire', keywords: ['会议', '沟通', '谈判'] },
@@ -128,14 +143,12 @@ const activityOptions = [
   { id: 'rest', label: '休息静养', wuxing: 'water', keywords: ['休息', '冥想', '放松'] }
 ]
 
-// 获取分数等级
 function getScoreLevel(score) {
   if (score >= 80) return 'high'
   if (score >= 60) return 'medium'
   return 'low'
 }
 
-// 执行查询
 function executeQuery() {
   if (!selectedActivity.value) return
 
@@ -172,7 +185,6 @@ function executeQuery() {
       const score = result.score
 
       if (score >= 50) {
-        // 只记录及格以上的
         results.push({
           date: `${month}月${day}日`,
           fullDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
@@ -191,12 +203,10 @@ function executeQuery() {
   queryResults.value = results
 }
 
-// 计算匹配分数（修复版 - 根据活动类型差异化计算）
 function calculateMatchScore(year, month, day, hour, activity) {
-  let score = 50 // 基础分
+  let score = 50
   const reasons = []
 
-  // 【关键修复】不同活动有不同的"基础适宜度"
   const baseScoreByType = {
     work: 55,
     meeting: 52,
@@ -210,10 +220,8 @@ function calculateMatchScore(year, month, day, hour, activity) {
     rest: 60
   }
 
-  // 根据活动类型设置基础分
   score = baseScoreByType[activity.id] || 50
 
-  // 1. 使用V2算法计算八字时辰能量
   if (hasBirthInfo.value) {
     const dayBazi = calculateBaZi(year, month, day, 12)
     const hourBazi = calculateBaZi(year, month, day, hour)
@@ -230,10 +238,8 @@ function calculateMatchScore(year, month, day, hour, activity) {
         false
       )
 
-      // 【修复2】大幅降低八字权重到15%，让活动类型主导
       score = score * 0.85 + energyScore * 0.15
 
-      // 【修复2】降低五行匹配权重到+12/+8，平衡活动类型和八字
       const hourElement = HEAVENLY_STEM_ELEMENTS[hourBazi.stem]
       if (hourElement === activity.wuxing) {
         score += 12
@@ -243,7 +249,6 @@ function calculateMatchScore(year, month, day, hour, activity) {
         reasons.push('喜用神时辰')
       }
 
-      // 【修复2】大幅降低日柱匹配权重到+5/+3，避免日期差异过大
       const dayElement = HEAVENLY_STEM_ELEMENTS[dayBazi.day.stem]
       if (dayElement === activity.wuxing) {
         score += 5
@@ -254,7 +259,6 @@ function calculateMatchScore(year, month, day, hour, activity) {
       }
     }
   } else {
-    // 无个人信息时根据活动类型调整
     const hourData = energyStore.getHourData(hour)
     if (hourData) {
       let hourScore = hourData.score
@@ -271,7 +275,6 @@ function calculateMatchScore(year, month, day, hour, activity) {
     }
   }
 
-  // 【修复】大幅加强时段类型匹配权重到+20/+15
   const hourInRange =
     activity.timePreference === 'morning' && hour >= 8 && hour <= 12
       ? 20
@@ -294,13 +297,11 @@ function calculateMatchScore(year, month, day, hour, activity) {
     reasons.push(timeLabels[activity.timePreference])
   }
 
-  // 深夜降权
   if (hour >= 0 && hour <= 5 && activity.timePreference !== 'night') {
     score -= 20
     reasons.push('深夜不宜此活动')
   }
 
-  // 限制在 20-95 范围内
   score = Math.max(20, Math.min(95, Math.round(score)))
 
   return {
@@ -309,7 +310,6 @@ function calculateMatchScore(year, month, day, hour, activity) {
   }
 }
 
-// 生成原因说明
 function generateReasons(score, activity, period) {
   const reasons = []
 
@@ -333,9 +333,7 @@ function generateReasons(score, activity, period) {
   return reasons
 }
 
-// 跳转到具体时段
 function jumpToTime(result) {
-  // 设置选中的小时并切换到Today Tab
   appStore.setSelectedHour(result.hour)
   appStore.setActiveTab('today')
 }
@@ -343,40 +341,24 @@ function jumpToTime(result) {
 
 <style scoped>
 .best-timing-query {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
-.query-header {
-  margin-bottom: 20px;
-}
-
-.query-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--header-text);
-  margin: 0 0 8px 0;
-}
-
-.query-subtitle {
-  font-size: 0.85rem;
+.card-subtitle {
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin: 0;
+  margin: var(--space-1) 0 0;
 }
 
-/* Query Form */
 .query-form {
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin: var(--space-5) 0;
 }
 
 .form-row {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .form-row:last-child {
@@ -385,41 +367,24 @@ function jumpToTime(result) {
 
 .form-label {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.activity-select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.activity-select:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
 }
 
 .time-preferences {
   display: flex;
-  gap: 12px;
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
 .preference-checkbox {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--text-primary);
 }
 
@@ -427,31 +392,11 @@ function jumpToTime(result) {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: var(--accent-color);
+  accent-color: var(--water);
 }
 
-.query-btn {
+.btn-full {
   width: 100%;
-  padding: 14px;
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.query-btn:hover:not(:disabled) {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.query-btn:disabled {
-  background: var(--text-secondary);
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 /* Query Results */
@@ -474,48 +419,48 @@ function jumpToTime(result) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .results-title {
-  font-weight: 600;
-  color: var(--header-text);
-  font-size: 0.95rem;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
 }
 
 .results-count {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  background: var(--bg-secondary);
-  padding: 4px 10px;
-  border-radius: 10px;
+  background: var(--bg-elevated);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
 }
 
 .result-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .result-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  transition: all 0.2s;
-  border: 2px solid transparent;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-subtle);
 }
 
 .result-item:hover {
-  background: var(--card-bg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--ink-medium);
+  border-color: var(--border-light);
 }
 
 .result-item.top {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.3);
 }
 
 .result-rank {
@@ -525,8 +470,21 @@ function jumpToTime(result) {
 }
 
 .rank-badge {
-  font-size: 1.5rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-badge.gold {
+  color: var(--metal);
+}
+
+.rank-badge.silver {
+  color: var(--text-secondary);
+}
+
+.rank-badge.bronze {
+  color: #cd7f32;
 }
 
 .rank-number {
@@ -535,10 +493,10 @@ function jumpToTime(result) {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   border-radius: 50%;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: var(--text-secondary);
 }
 
@@ -550,98 +508,92 @@ function jumpToTime(result) {
 .result-datetime {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .result-date {
-  font-weight: 700;
-  color: var(--header-text);
-  font-size: 1rem;
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  font-size: var(--text-base);
 }
 
 .result-time {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
 .result-score {
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 6px;
+  font-weight: var(--font-bold);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-1);
 }
 
 .result-score.high {
-  color: var(--success-color);
+  color: var(--wood);
 }
 
 .result-score.medium {
-  color: var(--accent-color);
+  color: var(--water);
 }
 
 .result-score.low {
-  color: var(--danger-color);
+  color: var(--fire);
 }
 
 .result-reasons {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .reason-tag {
-  font-size: 0.75rem;
-  background: var(--card-bg);
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-size: var(--text-xs);
+  background: var(--bg-secondary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
 }
 
 .result-action {
   flex-shrink: 0;
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.result-action:hover {
-  background: var(--accent-hover);
 }
 
 .results-tip {
-  margin-top: 16px;
-  padding: 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: var(--accent-color);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: rgba(96, 165, 250, 0.1);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--water);
 }
 
-/* No Results */
 .no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
   text-align: center;
-  padding: 30px 20px;
+  padding: var(--space-8) var(--space-5);
   color: var(--text-secondary);
-  font-size: 0.9rem;
 }
 
-/* Responsive */
+.no-results p {
+  margin: 0;
+}
+
 @media (max-width: 480px) {
   .time-preferences {
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-2);
   }
 
   .result-datetime {
     flex-direction: column;
-    gap: 4px;
+    gap: var(--space-1);
   }
 
   .result-item {
@@ -650,7 +602,7 @@ function jumpToTime(result) {
 
   .result-action {
     width: 100%;
-    margin-top: 8px;
+    margin-top: var(--space-2);
   }
 }
 </style>

@@ -4,13 +4,9 @@
       <div v-for="day in weekDays" :key="day" class="week-day-label">{{ day }}</div>
     </div>
     <div class="chart-body">
-      <div 
-        v-for="(dayData, index) in data" 
-        :key="index"
-        class="day-column"
-      >
-        <div 
-          class="energy-bar" 
+      <div v-for="(dayData, index) in data" :key="index" class="day-column">
+        <div
+          class="energy-bar"
           :style="{ height: dayData.score + '%', backgroundColor: getColor(dayData.score) }"
           :title="`${dayData.date}: ${dayData.score}分`"
         ></div>
@@ -21,12 +17,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
 const props = defineProps({
   data: {
     type: Array,
-    required: true,
+    required: true
     // Expected format: [{ date: '2024-01-01', shortDate: '1/1', score: 80 }, ...]
   }
 })
@@ -34,10 +28,10 @@ const props = defineProps({
 const weekDays = ['一', '二', '三', '四', '五', '六', '日']
 
 function getColor(score) {
-  if (score >= 80) return 'var(--success-color)'
-  if (score >= 60) return 'var(--accent-color)'
-  if (score >= 40) return 'var(--warning-color)'
-  return 'var(--danger-color)'
+  if (score >= 80) return 'var(--wood)'
+  if (score >= 60) return 'var(--water)'
+  if (score >= 40) return 'var(--earth)'
+  return 'var(--fire)'
 }
 </script>
 
@@ -52,16 +46,17 @@ function getColor(score) {
 .week-header {
   display: flex;
   justify-content: space-around;
-  margin-bottom: 10px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 5px;
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-2);
 }
 
 .week-day-label {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
   width: 100%;
   text-align: center;
+  font-family: var(--font-display);
 }
 
 .chart-body {
@@ -69,7 +64,7 @@ function getColor(score) {
   display: flex;
   justify-content: space-around;
   align-items: flex-end;
-  padding-bottom: 20px; /* Space for dates */
+  padding-bottom: var(--space-6);
 }
 
 .day-column {
@@ -84,15 +79,15 @@ function getColor(score) {
 
 .energy-bar {
   width: 60%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   transition: height 0.5s ease;
   min-height: 4px;
 }
 
 .day-date {
   position: absolute;
-  bottom: -25px;
-  font-size: 0.75rem;
+  bottom: -24px;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
 }
 </style>

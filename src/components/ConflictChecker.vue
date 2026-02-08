@@ -1,9 +1,9 @@
 <template>
-  <div class="conflict-checker">
-    <div class="checker-header">
-      <h3 class="checker-title">计划冲突检查</h3>
-      <p class="checker-subtitle">检查你的计划时间是否合适</p>
-    </div>
+  <BaseCard class="conflict-checker" elevated>
+    <template #header>
+      <h3 class="card-title">计划冲突检查</h3>
+      <p class="card-subtitle">检查你的计划时间是否合适</p>
+    </template>
 
     <div class="checker-form">
       <div class="form-row">
@@ -11,7 +11,7 @@
         <input
           v-model="planDescription"
           type="text"
-          class="text-input"
+          class="input"
           placeholder="例如：周三下午签约"
         />
       </div>
@@ -19,11 +19,11 @@
       <div class="form-row datetime-row">
         <div class="datetime-field">
           <label class="form-label">日期</label>
-          <input v-model="planDate" type="date" class="date-input" />
+          <input v-model="planDate" type="date" class="input" />
         </div>
         <div class="datetime-field">
           <label class="form-label">时间</label>
-          <select v-model="planHour" class="hour-select">
+          <select v-model="planHour" class="input select">
             <option v-for="h in 24" :key="h" :value="h - 1">
               {{ String(h - 1).padStart(2, '0') }}:00
             </option>
@@ -31,12 +31,17 @@
         </div>
       </div>
 
-      <button class="check-btn" @click="checkConflict" :disabled="!canCheck">检查是否合适</button>
+      <button class="btn btn-primary btn-full" @click="checkConflict" :disabled="!canCheck">
+        <AppIcon name="check-circle" size="sm" />
+        检查是否合适
+      </button>
     </div>
 
     <!-- 检查结果 -->
     <div v-if="checkResult" class="check-result" :class="checkResult.type">
-      <div class="result-icon">{{ checkResult.icon }}</div>
+      <div class="result-icon" :class="checkResult.type">
+        <AppIcon :name="checkResult.icon" size="xl" />
+      </div>
       <div class="result-content">
         <div class="result-title">{{ checkResult.title }}</div>
         <div class="result-message">{{ checkResult.message }}</div>
@@ -57,11 +62,14 @@
         </div>
 
         <div v-if="checkResult.tips.length > 0" class="result-tips">
-          <div v-for="tip in checkResult.tips" :key="tip" class="tip-item">💡 {{ tip }}</div>
+          <div v-for="tip in checkResult.tips" :key="tip" class="tip-item">
+            <AppIcon name="lightbulb" size="sm" />
+            {{ tip }}
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </BaseCard>
 </template>
 
 <script setup>
@@ -69,28 +77,27 @@ import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useEnergyStore } from '@/stores/energy'
 import { calculateBaZi, calculateHourEnergy } from '@/utils/tyme'
+import BaseCard from '@/components/common/BaseCard.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const userStore = useUserStore()
 const energyStore = useEnergyStore()
 
 const planDescription = ref('')
 const planDate = ref('')
-const planHour = ref(14) // 默认下午2点
+const planHour = ref(14)
 const checkResult = ref(null)
 
-// 是否可以检查
 const canCheck = computed(() => {
   return planDescription.value.trim().length > 0 && planDate.value
 })
 
-// 获取分数等级
 function getScoreLevel(score) {
   if (score >= 80) return 'high'
   if (score >= 60) return 'medium'
   return 'low'
 }
 
-// 执行冲突检查（使用V2算法）
 function checkConflict() {
   if (!canCheck.value) return
 
@@ -100,11 +107,10 @@ function checkConflict() {
   const day = date.getDate()
   const hour = planHour.value
 
-  // 计算该时段分数（使用V2算法）
   let score = 50
 
   if (userStore.hasBirthInfo()) {
-    const dayBazi = calculateBaZi(year, month, day, 12) // 日柱
+    const dayBazi = calculateBaZi(year, month, day, 12)
     const hourBazi = calculateBaZi(year, month, day, hour)
 
     if (dayBazi && hourBazi) {
@@ -114,27 +120,22 @@ function checkConflict() {
           favorable: userStore.profile.favorable,
           unfavorable: userStore.profile.unfavorable
         },
-        dayBazi, // V2新增：日柱
-        hourBazi, // 时辰
+        dayBazi,
+        hourBazi,
         false
       )
     }
   } else {
-    // 无个人信息时，使用默认时段分数
     const hourData = energyStore.getHourData(hour)
     if (hourData) {
       score = hourData.score
     }
   }
 
-  // 解析活动类型
   const activityType = detectActivityType(planDescription.value)
-
-  // 根据分数生成结果
   checkResult.value = generateResult(score, year, month, day, hour, activityType)
 }
 
-// 检测活动类型
 function detectActivityType(description) {
   const keywords = {
     签约: 'sign',
@@ -166,17 +167,14 @@ function detectActivityType(description) {
   return 'general'
 }
 
-// 生成检查结果
 function generateResult(score, year, month, day, hour, activityType) {
   const datetime = `${month}月${day}日 ${String(hour).padStart(2, '0')}:00`
-
-  // 查找替代时段（前后3天）
   const alternatives = findAlternatives(year, month, day, hour, activityType)
 
   if (score >= 75) {
     return {
       type: 'good',
-      icon: '✅',
+      icon: 'check-circle',
       title: '这个时段很合适！',
       message: `${datetime} 能量分数 ${score}分，非常适合你的计划。`,
       alternatives: [],
@@ -185,7 +183,7 @@ function generateResult(score, year, month, day, hour, activityType) {
   } else if (score >= 50) {
     return {
       type: 'medium',
-      icon: '⚠️',
+      icon: 'warning-circle',
       title: '这个时段尚可，但有更好的选择',
       message: `${datetime} 能量分数 ${score}分，可以执行但不够理想。`,
       alternatives: alternatives.filter((a) => a.score >= 75),
@@ -194,7 +192,7 @@ function generateResult(score, year, month, day, hour, activityType) {
   } else {
     return {
       type: 'bad',
-      icon: '❌',
+      icon: 'close-circle',
       title: '建议改期！',
       message: `${datetime} 能量分数 ${score}分，不太适合重要事项。`,
       alternatives: alternatives.filter((a) => a.score >= 70),
@@ -203,26 +201,24 @@ function generateResult(score, year, month, day, hour, activityType) {
   }
 }
 
-// 查找替代时段（使用V2算法）
 function findAlternatives(year, month, day) {
   const alternatives = []
 
-  // 搜索前后3天，每天3个时段（上午/下午/晚上）
   for (let dayOffset = -3; dayOffset <= 3; dayOffset++) {
-    if (dayOffset === 0) continue // 跳过当天
+    if (dayOffset === 0) continue
 
     const checkDate = new Date(year, month - 1, day + dayOffset)
     const checkYear = checkDate.getFullYear()
     const checkMonth = checkDate.getMonth() + 1
     const checkDay = checkDate.getDate()
 
-    const timeSlots = [10, 14, 20] // 上午、下午、晚上代表时段
+    const timeSlots = [10, 14, 20]
 
     timeSlots.forEach((checkHour) => {
       let slotScore = 50
 
       if (userStore.hasBirthInfo()) {
-        const dayBazi = calculateBaZi(checkYear, checkMonth, checkDay, 12) // 日柱
+        const dayBazi = calculateBaZi(checkYear, checkMonth, checkDay, 12)
         const hourBazi = calculateBaZi(checkYear, checkMonth, checkDay, checkHour)
 
         if (dayBazi && hourBazi) {
@@ -232,8 +228,8 @@ function findAlternatives(year, month, day) {
               favorable: userStore.profile.favorable,
               unfavorable: userStore.profile.unfavorable
             },
-            dayBazi, // V2新增：日柱
-            hourBazi, // 时辰
+            dayBazi,
+            hourBazi,
             false
           )
         }
@@ -245,7 +241,6 @@ function findAlternatives(year, month, day) {
       }
 
       if (slotScore >= 55) {
-        // 只保留55分以上（V2算法分数范围更广）
         const dateStr =
           dayOffset === 1 ? '明天' : dayOffset === -1 ? '昨天' : `${checkMonth}月${checkDay}日`
 
@@ -259,58 +254,37 @@ function findAlternatives(year, month, day) {
     })
   }
 
-  // 按分数排序
   alternatives.sort((a, b) => b.score - a.score)
   return alternatives.slice(0, 6)
 }
 
-// 选择替代时段
 function selectAlternative(alt) {
-  // 填充表单
   planDate.value = alt.fullDate
   planHour.value = alt.hour
-
-  // 重新检查
   checkConflict()
 }
 </script>
 
 <style scoped>
 .conflict-checker {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
-.checker-header {
-  margin-bottom: 20px;
-}
-
-.checker-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--header-text);
-  margin: 0 0 8px 0;
-}
-
-.checker-subtitle {
-  font-size: 0.85rem;
+.card-subtitle {
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin: 0;
+  margin: var(--space-1) 0 0;
 }
 
-/* Checker Form */
 .checker-form {
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin: var(--space-5) 0;
 }
 
 .form-row {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .form-row:last-child {
@@ -319,36 +293,16 @@ function selectAlternative(alt) {
 
 .form-label {
   display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.text-input,
-.date-input,
-.hour-select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-size: 1rem;
-}
-
-.text-input:focus,
-.date-input:focus,
-.hour-select:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
 }
 
 .datetime-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .datetime-field {
@@ -356,36 +310,16 @@ function selectAlternative(alt) {
   flex-direction: column;
 }
 
-.check-btn {
+.btn-full {
   width: 100%;
-  padding: 14px;
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.check-btn:hover:not(:disabled) {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.check-btn:disabled {
-  background: var(--text-secondary);
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 /* Check Result */
 .check-result {
   display: flex;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 12px;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
   animation: slideDown 0.3s ease;
 }
 
@@ -401,23 +335,34 @@ function selectAlternative(alt) {
 }
 
 .check-result.good {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
 }
 
 .check-result.medium {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 .check-result.bad {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
 }
 
 .result-icon {
-  font-size: 2rem;
   flex-shrink: 0;
+}
+
+.result-icon.good {
+  color: var(--wood);
+}
+
+.result-icon.medium {
+  color: var(--earth);
+}
+
+.result-icon.bad {
+  color: var(--fire);
 }
 
 .result-content {
@@ -425,92 +370,99 @@ function selectAlternative(alt) {
 }
 
 .result-title {
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 8px;
-  color: var(--header-text);
+  font-weight: var(--font-bold);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
 }
 
 .result-message {
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   color: var(--text-primary);
-  margin-bottom: 16px;
-  line-height: 1.5;
+  margin-bottom: var(--space-4);
+  line-height: var(--leading-relaxed);
 }
 
 /* Alternatives */
 .alternatives {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .alternatives-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  margin-bottom: 10px;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
 }
 
 .alternatives-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .alternative-btn {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .alternative-btn:hover {
-  border-color: var(--accent-color);
-  background: rgba(var(--accent-rgb), 0.05);
+  border-color: var(--water);
+  background: rgba(96, 165, 250, 0.05);
 }
 
 .alt-datetime {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
 }
 
 .alt-score {
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  font-weight: var(--font-bold);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
 }
 
 .alt-score.high {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--success-color);
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--wood);
 }
 
 .alt-score.medium {
-  background: rgba(59, 130, 246, 0.2);
-  color: var(--accent-color);
+  background: rgba(96, 165, 250, 0.2);
+  color: var(--water);
 }
 
 /* Tips */
 .result-tips {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .tip-item {
-  font-size: 0.85rem;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.5);
-  padding: 8px 12px;
-  border-radius: 6px;
+  background: rgba(232, 196, 102, 0.1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
 }
 
-/* Responsive */
+.tip-item svg {
+  flex-shrink: 0;
+  color: var(--metal);
+}
+
 @media (max-width: 480px) {
   .datetime-row {
     grid-template-columns: 1fr;
@@ -518,11 +470,7 @@ function selectAlternative(alt) {
 
   .check-result {
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .result-icon {
-    font-size: 1.5rem;
+    gap: var(--space-3);
   }
 }
 </style>

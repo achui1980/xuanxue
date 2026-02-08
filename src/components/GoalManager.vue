@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useEnergyStore } from '@/stores/energy'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const userStore = useUserStore()
 const energyStore = useEnergyStore()
@@ -11,8 +12,8 @@ const recommendedGoalId = ref(null)
 
 const goals = computed(() => userStore.profile.goals || [])
 const hasGoals = computed(() => goals.value.length > 0)
+const completedCount = computed(() => goals.value.filter((g) => g.completed).length)
 
-// 推荐结果
 const recommendation = ref(null)
 
 function handleAddGoal() {
@@ -37,12 +38,11 @@ function handleToggleGoal(id) {
 
 function getRecommendation(goal) {
   if (recommendedGoalId.value === goal.id) {
-    // Toggle off
     recommendation.value = null
     recommendedGoalId.value = null
     return
   }
-  
+
   const bestTimes = energyStore.getBestHoursForGoal(goal.text)
   recommendation.value = {
     goalId: goal.id,
@@ -53,227 +53,215 @@ function getRecommendation(goal) {
 </script>
 
 <template>
-  <div class="goal-manager card">
-    <div class="card-header">
-      <h3>今日目标</h3>
-      <span class="badge" v-if="hasGoals">{{ goals.filter(g => g.completed).length }}/{{ goals.length }}</span>
+  <div class="goal-manager">
+    <div class="goal-header">
+      <h3 class="goal-title">
+        <AppIcon name="star" size="sm" />
+        今日目标
+      </h3>
+      <span v-if="hasGoals" class="goal-badge"> {{ completedCount }}/{{ goals.length }} </span>
     </div>
 
     <div class="add-goal-form">
-      <input 
-        v-model="newGoalText" 
+      <input
+        v-model="newGoalText"
         @keyup.enter="handleAddGoal"
-        type="text" 
-        placeholder="添加新目标..." 
-        class="goal-input"
+        type="text"
+        placeholder="添加新目标..."
+        class="input goal-input"
       />
-      <button @click="handleAddGoal" class="add-btn" :disabled="!newGoalText.trim()">
-        +
+      <button
+        @click="handleAddGoal"
+        class="btn btn-primary add-btn"
+        :disabled="!newGoalText.trim()"
+      >
+        <AppIcon name="plus" size="sm" />
       </button>
     </div>
 
-    <div class="goals-list" v-if="hasGoals">
-      <div 
-        v-for="goal in goals" 
-        :key="goal.id" 
+    <div v-if="hasGoals" class="goals-list">
+      <div
+        v-for="goal in goals"
+        :key="goal.id"
         class="goal-item"
         :class="{ completed: goal.completed }"
       >
         <div class="goal-content">
           <label class="checkbox-wrapper">
-            <input 
-              type="checkbox" 
-              :checked="goal.completed" 
-              @change="handleToggleGoal(goal.id)"
-            />
+            <input type="checkbox" :checked="goal.completed" @change="handleToggleGoal(goal.id)" />
             <span class="checkmark"></span>
           </label>
           <span class="goal-text">{{ goal.text }}</span>
         </div>
-        
+
         <div class="goal-actions">
-          <button 
-            class="recommend-btn" 
+          <button
+            class="action-btn recommend-btn"
             :class="{ active: recommendedGoalId === goal.id }"
             @click="getRecommendation(goal)"
             title="查看最佳时机"
           >
-            ⚡️
+            <AppIcon name="trend-up" size="sm" />
           </button>
-          <button class="delete-btn" @click="handleRemoveGoal(goal.id)" title="删除">
-            ×
+          <button class="action-btn delete-btn" @click="handleRemoveGoal(goal.id)" title="删除">
+            <AppIcon name="close" size="sm" />
           </button>
         </div>
 
         <!-- Inline Recommendation -->
-        <div v-if="recommendedGoalId === goal.id && recommendation" class="recommendation-panel">
-          <div class="rec-title">最佳时机:</div>
-          <div class="rec-times">
-            <div v-for="time in recommendation.times" :key="time.hour" class="rec-time-chip">
-              <span class="time-range">{{ time.rangeLabel.split('-')[0] }}</span>
-              <span class="time-score">{{ time.score }}分</span>
-            </div>
-            <div v-if="recommendation.times.length === 0" class="no-rec">
-              暂无特别推荐时段，建议选择高能量时段。
+        <Transition name="slide">
+          <div v-if="recommendedGoalId === goal.id && recommendation" class="recommendation-panel">
+            <div class="rec-title">推荐时辰</div>
+            <div class="rec-times">
+              <div v-for="time in recommendation.times" :key="time.hour" class="rec-time-chip">
+                <span class="time-range">{{ time.rangeLabel.split('-')[0] }}</span>
+                <span class="time-score">{{ time.score }}分</span>
+              </div>
+              <div v-if="recommendation.times.length === 0" class="no-rec">
+                暂无特别推荐时段，建议选择高能量时段。
+              </div>
             </div>
           </div>
-        </div>
+        </Transition>
       </div>
     </div>
-    
+
     <div v-else class="empty-state">
-      <p>暂无目标，开始规划您的一天吧。</p>
+      <AppIcon name="star" size="lg" />
+      <p>暂无目标，开始规划您的一天吧</p>
     </div>
   </div>
 </template>
 
 <style scoped>
-.card {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--border-color);
-  transition: all 0.3s ease;
+.goal-manager {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
 }
 
-.card-header {
+.goal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: var(--space-4);
 }
 
-h3 {
+.goal-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
   margin: 0;
-  font-size: 1.1rem;
-  color: var(--header-text);
 }
 
-.badge {
-  background: var(--bg-secondary);
+.goal-badge {
+  background: var(--bg-elevated);
   color: var(--text-secondary);
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.8rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
 }
 
 .add-goal-form {
   display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
 .goal-input {
   flex: 1;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  padding: 8px 12px;
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.goal-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
 }
 
 .add-btn {
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  width: 36px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s;
-}
-
-.add-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  padding: var(--space-2) var(--space-3);
 }
 
 .goals-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2);
 }
 
 .goal-item {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  padding: 8px;
-  border-radius: 8px;
-  background: var(--bg-secondary);
-  transition: all 0.2s;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  transition: all var(--transition-fast);
 }
 
 .goal-item:hover {
-  background: var(--bg-hover);
+  background: var(--ink-medium);
 }
 
 .goal-item.completed .goal-text {
   text-decoration: line-through;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
 }
 
 .goal-content {
   display: flex;
   align-items: center;
   flex: 1;
-  gap: 10px;
-  min-height: 28px;
+  gap: var(--space-3);
+  min-height: 24px;
 }
 
 .goal-text {
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
   word-break: break-all;
 }
 
 .goal-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
-.recommend-btn, .delete-btn {
-  background: none;
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
   border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .recommend-btn:hover {
-  color: #fbbf24; /* Amber-400 */
+  color: var(--earth);
   background: rgba(251, 191, 36, 0.1);
 }
 
 .recommend-btn.active {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.1);
+  color: var(--earth);
+  background: rgba(251, 191, 36, 0.15);
 }
 
 .delete-btn:hover {
-  color: #ef4444; /* Red-500 */
-  background: rgba(239, 68, 68, 0.1);
+  color: var(--fire);
+  background: rgba(248, 113, 113, 0.1);
 }
 
 /* Custom Checkbox */
 .checkbox-wrapper {
   display: block;
   position: relative;
-  padding-left: 20px;
+  padding-left: 24px;
   cursor: pointer;
-  font-size: 22px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -294,93 +282,115 @@ h3 {
   left: 0;
   height: 18px;
   width: 18px;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
 }
 
 .checkbox-wrapper:hover input ~ .checkmark {
-  border-color: var(--accent-color);
+  border-color: var(--metal);
 }
 
 .checkbox-wrapper input:checked ~ .checkmark {
-  background-color: var(--accent-color);
-  border-color: var(--accent-color);
+  background-color: var(--wood);
+  border-color: var(--wood);
 }
 
 .checkmark:after {
-  content: "";
+  content: '';
   position: absolute;
   display: none;
-}
-
-.checkbox-wrapper input:checked ~ .checkmark:after {
-  display: block;
-}
-
-.checkbox-wrapper .checkmark:after {
   left: 6px;
   top: 2px;
   width: 4px;
   height: 9px;
   border: solid white;
   border-width: 0 2px 2px 0;
-  -webkit-transform: rotate(45deg);
-  -ms-transform: rotate(45deg);
   transform: rotate(45deg);
 }
 
+.checkbox-wrapper input:checked ~ .checkmark:after {
+  display: block;
+}
+
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+  color: var(--text-tertiary);
   text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  padding: 20px 0;
+}
+
+.empty-state p {
+  font-size: var(--text-sm);
+  margin: 0;
 }
 
 /* Recommendation Panel */
 .recommendation-panel {
   width: 100%;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border-color);
-  animation: slideDown 0.2s ease-out;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border-light);
 }
 
 .rec-title {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-2);
 }
 
 .rec-times {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
 .rec-time-chip {
-  background: rgba(251, 191, 36, 0.15); /* Amber with opacity */
+  background: rgba(251, 191, 36, 0.15);
   border: 1px solid rgba(251, 191, 36, 0.3);
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .time-range {
-  font-weight: 600;
-  color: var(--header-text);
-  font-size: 0.9rem;
+  font-weight: var(--font-semibold);
+  color: var(--earth);
+  font-size: var(--text-sm);
 }
 
 .time-score {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+.no-rec {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* Transitions */
+.slide-enter-active,
+.slide-leave-active {
+  transition: all var(--transition-base);
+  max-height: 200px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  padding-top: 0;
 }
 </style>

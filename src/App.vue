@@ -1,79 +1,113 @@
 <template>
-  <div class="app">
-    <div class="container">
+  <div class="app ink-texture">
+    <div class="app-container">
       <!-- Header -->
-      <header>
+      <header class="app-header">
         <div class="header-content">
-          <div class="title-group">
-            <h1>时机</h1>
-            <p class="subtitle">个体化时间能量决策助手</p>
+          <div class="brand">
+            <div class="brand-mark">
+              <svg
+                class="brand-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+            </div>
+            <div class="brand-text">
+              <h1 class="brand-title">时机</h1>
+              <p class="brand-subtitle">择时而动 · 顺势而为</p>
+            </div>
           </div>
-          <div class="header-controls">
+          <div class="header-meta">
             <RealTimeClock />
-            <button @click="toggleTheme" class="theme-toggle" :title="currentTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-              <span v-if="currentTheme === 'dark'">☀️</span>
-              <span v-else>🌙</span>
-            </button>
           </div>
         </div>
       </header>
 
-      <div class="main-layout">
-        <!-- Left Column: Navigation -->
-        <nav class="tab-nav">
-          <button 
-            v-for="tab in tabs" 
-            :key="tab.id"
-            class="tab-btn" 
-            :class="{ active: activeTab === tab.id }"
-            @click="setActiveTab(tab.id)"
-          >
-            {{ tab.label }}
-          </button>
-        </nav>
+      <!-- Main Bento Grid Layout -->
+      <div class="bento-layout">
+        <!-- Left Sidebar: Navigation -->
+        <aside class="bento-nav">
+          <nav class="tab-nav">
+            <button
+              v-for="tab in tabs"
+              :key="tab.id"
+              class="nav-item"
+              :class="{ active: activeTab === tab.id }"
+              @click="setActiveTab(tab.id)"
+            >
+              <span class="nav-icon" v-html="tab.icon"></span>
+              <span class="nav-label">{{ tab.label }}</span>
+              <span class="nav-indicator"></span>
+            </button>
+          </nav>
+        </aside>
 
-        <!-- Middle Column: Main Content -->
-        <main class="tab-content-wrapper">
+        <!-- Main Content Area -->
+        <main class="bento-main">
           <ErrorBoundary>
             <Transition name="tab" mode="out-in">
               <component :is="currentTabComponent" :key="activeTab" />
             </Transition>
           </ErrorBoundary>
         </main>
-        
-        <!-- Right Column: Auxiliary -->
-        <aside class="aux-sidebar">
-           <ErrorBoundary>
-             <!-- Fortune Quick Look -->
-             <div v-if="!sidebarLoading && dailyFortune" class="sidebar-card quick-look">
-               <div class="quick-look-header">
-                  <span class="ql-label">今日能量</span>
-                  <span class="ql-score" :class="dailyFortune.overall.level">{{ dailyFortune.overall.score }}</span>
-               </div>
-               <div class="ql-quote">{{ dailyFortune.quote }}</div>
-             </div>
 
-             <SkeletonLoader :loading="sidebarLoading" height="150px" class="mb-6">
-               <GoalManager />
-             </SkeletonLoader>
-             
-             <!-- Collapsible Radar -->
-             <div class="mt-6 sidebar-section">
-               <div class="sidebar-section-header" @click="radarCollapsed = !radarCollapsed">
-                 <span>五行能量参考</span>
-                 <span class="toggle-icon">{{ radarCollapsed ? '▼' : '▲' }}</span>
-               </div>
-               
-               <div v-show="!radarCollapsed" class="radar-container">
-                 <SkeletonLoader :loading="sidebarLoading" height="300px">
-                   <FiveElementsRadar />
-                 </SkeletonLoader>
-               </div>
-               <div v-if="radarCollapsed" class="radar-hint">
-                 点击查看长期能量风格分析
-               </div>
-             </div>
-           </ErrorBoundary>
+        <!-- Right Sidebar: Quick Info -->
+        <aside class="bento-sidebar">
+          <ErrorBoundary>
+            <!-- Daily Fortune Card -->
+            <div v-if="dailyFortune" class="sidebar-card fortune-mini">
+              <div class="card-header">
+                <span class="card-title">今日运势</span>
+                <span class="fortune-score" :class="dailyFortune.overall.level">
+                  {{ dailyFortune.overall.score }}
+                </span>
+              </div>
+              <p class="fortune-quote">{{ dailyFortune.quote }}</p>
+            </div>
+
+            <!-- Current Hour -->
+            <div class="sidebar-card current-hour">
+              <div class="card-header">
+                <span class="card-title">当前时辰</span>
+              </div>
+              <div class="hour-display">
+                <span class="hour-number">{{ currentHour }}:00</span>
+                <span class="hour-branch">{{ currentBranch }}</span>
+              </div>
+            </div>
+
+            <!-- Goals -->
+            <SkeletonLoader :loading="sidebarLoading" height="200px">
+              <GoalManager />
+            </SkeletonLoader>
+
+            <!-- Five Elements Radar -->
+            <div class="sidebar-card radar-card">
+              <div class="card-header collapsible" @click="radarCollapsed = !radarCollapsed">
+                <span class="card-title">五行能量</span>
+                <svg
+                  class="toggle-icon"
+                  :class="{ collapsed: radarCollapsed }"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <Transition name="collapse">
+                <div v-show="!radarCollapsed" class="radar-content">
+                  <FiveElementsRadar />
+                </div>
+              </Transition>
+            </div>
+          </ErrorBoundary>
         </aside>
       </div>
     </div>
@@ -86,6 +120,7 @@ import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { useEnergyStore } from '@/stores/energy'
 import { useNotifications } from '@/composables/useNotifications'
+import { useBeijingTime } from '@/composables/useBeijingTime'
 import TodayTab from '@/components/TodayTab.vue'
 import AnalysisTab from '@/components/AnalysisTab.vue'
 import ProfileTab from '@/components/ProfileTab.vue'
@@ -99,21 +134,37 @@ const appStore = useAppStore()
 const userStore = useUserStore()
 const energyStore = useEnergyStore()
 const { sendNotification } = useNotifications()
+const { currentHour, currentBranch } = useBeijingTime()
 
+// Navigation tabs with SVG icons
 const tabs = [
-  { id: 'today', label: '今日', component: 'TodayTab' },
-  { id: 'result', label: '分析', component: 'AnalysisTab' },
-  { id: 'profile', label: '个人', component: 'ProfileTab' }
+  {
+    id: 'today',
+    label: '今日',
+    component: 'TodayTab',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+  },
+  {
+    id: 'result',
+    label: '分析',
+    component: 'AnalysisTab',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>'
+  },
+  {
+    id: 'profile',
+    label: '个人',
+    component: 'ProfileTab',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+  }
 ]
 
 const activeTab = computed(() => appStore.activeTab)
-const currentTheme = computed(() => appStore.theme)
 const dailyFortune = computed(() => energyStore.dailyFortune)
 const sidebarLoading = ref(true)
-const radarCollapsed = ref(true)
+const radarCollapsed = ref(false)
 
 const currentTabComponent = computed(() => {
-  const tab = tabs.find(t => t.id === activeTab.value)
+  const tab = tabs.find((t) => t.id === activeTab.value)
   switch (tab?.component) {
     case 'TodayTab':
       return TodayTab
@@ -130,38 +181,29 @@ function setActiveTab(tabId) {
   appStore.setActiveTab(tabId)
 }
 
-function toggleTheme() {
-  appStore.toggleTheme()
-}
-
 // Watch for hour changes to trigger notifications
 watch(
   () => appStore.selectedHour,
   (newHour) => {
-    // Only trigger if notifications are enabled
     if (!userStore.profile.enableNotifications) return
 
-    // Ensure we have current energy data
-    // Assuming energyStore has hourlyScores or we access via hoursData
     const hourData = energyStore.hoursData[newHour]
     if (!hourData) return
 
     const currentScore = hourData.score
     const hourLabel = `${newHour}:00`
-    
-    // Trigger 1: High Energy (Prime Time)
+
     if (currentScore >= 85) {
-      sendNotification('吉时已到 ✨', {
+      sendNotification('吉时已到', {
         body: `${hourLabel} 能量极佳 (${currentScore}分)，适合处理重要事务！`,
         tag: 'high-energy'
       })
       return
     }
 
-    // Trigger 2: Low Energy Warning
     if (currentScore <= 40) {
-      sendNotification('运势提醒 ⚠️', {
-        body: `${hourLabel} 能量较低 (${currentScore}分)，建议保守行事，避免冲动决策。`,
+      sendNotification('运势提醒', {
+        body: `${hourLabel} 能量较低 (${currentScore}分)，建议保守行事。`,
         tag: 'low-energy'
       })
     }
@@ -169,12 +211,8 @@ watch(
 )
 
 onMounted(() => {
-  // Initialize the app with current Beijing time
   appStore.setSelectedHour(appStore.getCurrentBeijingHour())
-  // Apply theme
-  appStore.applyTheme(appStore.theme)
-  
-  // Simulate loading for sidebar
+
   setTimeout(() => {
     sidebarLoading.value = false
   }, 800)
@@ -184,218 +222,371 @@ onMounted(() => {
 <style scoped>
 .app {
   min-height: 100vh;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  padding: var(--space-5);
 }
 
-.container {
-  max-width: 1200px;
+.app-container {
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
 }
 
-header {
-  margin-bottom: 30px;
+/* Header Styles */
+.app-header {
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
 
-.title-group {
-  text-align: left;
-}
-
-.header-controls {
+.brand {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
-.theme-toggle {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 50%;
-  transition: background-color 0.2s;
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--metal) 0%, var(--metal-dim) 100%);
+  border-radius: var(--radius-md);
+  color: var(--ink-black);
 }
 
-.theme-toggle:hover {
-  background-color: var(--border-color);
+.brand-icon {
+  width: 28px;
+  height: 28px;
 }
 
-h1 {
-  color: var(--header-text);
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.subtitle {
-  color: var(--text-secondary);
-  font-size: 1.1rem;
-  margin: 0;
-}
-
-/* Mobile Layout (Default) */
-.main-layout {
+.brand-text {
   display: flex;
   flex-direction: column;
+  gap: var(--space-1);
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.brand-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  letter-spacing: 0.1em;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Bento Grid Layout */
+.bento-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* Navigation Sidebar */
+.bento-nav {
+  position: sticky;
+  top: var(--space-5);
 }
 
 .tab-nav {
   display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-  border-bottom: 1px solid var(--border-color);
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.tab-btn {
-  background: none;
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
   border: none;
-  padding: 12px 24px;
-  font-size: 1rem;
-  cursor: pointer;
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
+  font-size: var(--text-base);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
 }
 
-.tab-btn.active {
-  color: var(--header-text);
-  border-bottom-color: var(--accent-color);
-  font-weight: 600;
-}
-
-.tab-btn:hover {
+.nav-item:hover {
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
-.tab-content-wrapper {
-  position: relative;
-  width: 100%;
+.nav-item.active {
+  background: var(--bg-elevated);
+  color: var(--metal);
 }
 
-.aux-sidebar {
-  display: none; /* Hide on mobile for now */
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: var(--metal);
+  border-radius: 0 2px 2px 0;
+  transition: height var(--transition-fast);
+}
+
+.nav-item.active .nav-indicator {
+  height: 20px;
+}
+
+/* Main Content */
+.bento-main {
+  min-height: 600px;
+}
+
+/* Right Sidebar */
+.bento-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  position: sticky;
+  top: var(--space-5);
 }
 
 .sidebar-card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-md);
 }
 
-.quick-look-header {
+.card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
 }
 
-.ql-label {
-  font-weight: 600;
+.card-header.collapsible {
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.card-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.ql-score {
-  font-size: 1.2rem;
-  font-weight: 700;
+.toggle-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
 }
-.ql-score.good { color: var(--success-color); }
-.ql-score.caution { color: var(--warning-color); }
-.ql-score.ok { color: var(--text-primary); }
 
-.ql-quote {
-  font-size: 0.85rem;
-  color: var(--text-primary);
-  line-height: 1.4;
+.toggle-icon.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Fortune Mini Card */
+.fortune-mini .fortune-score {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.fortune-score.good {
+  color: var(--wood);
+  background: rgba(74, 222, 128, 0.15);
+}
+
+.fortune-score.caution {
+  color: var(--fire);
+  background: rgba(248, 113, 113, 0.15);
+}
+
+.fortune-score.ok {
+  color: var(--metal);
+  background: rgba(232, 196, 102, 0.15);
+}
+
+.fortune-quote {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0;
   font-style: italic;
 }
 
-.sidebar-section {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 12px 16px;
-  box-shadow: var(--card-shadow);
-}
-
-.sidebar-section-header {
+/* Current Hour Card */
+.hour-display {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
-  color: var(--header-text);
+  align-items: baseline;
+  gap: var(--space-3);
 }
 
-.radar-hint {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-top: 8px;
-  text-align: center;
+.hour-number {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
 }
 
-/* Desktop Layout (3-Column) */
-@media (min-width: 1024px) {
-  .main-layout {
-    display: grid;
-    grid-template-columns: 200px 1fr 250px;
-    gap: 40px;
-    align-items: start;
-  }
-
-  .tab-nav {
-    flex-direction: column;
-    border-bottom: none;
-    border-right: 1px solid var(--border-color);
-    padding-right: 20px;
-    align-items: stretch;
-    justify-content: flex-start;
-  }
-
-  .tab-btn {
-    text-align: left;
-    border-bottom: none;
-    border-right: 2px solid transparent;
-    border-radius: 8px;
-    margin-bottom: 8px;
-  }
-
-  .tab-btn.active {
-    border-right-color: transparent; /* Reset bottom border style */
-    background-color: var(--bg-secondary);
-    color: var(--accent-color);
-  }
-
-  .aux-sidebar {
-    display: block;
-    min-height: 200px;
-  }
+.hour-branch {
+  font-size: var(--text-lg);
+  color: var(--metal);
+  font-weight: var(--font-medium);
 }
 
-/* Tab Transition */
+/* Radar Card */
+.radar-card {
+  overflow: hidden;
+}
+
+.radar-content {
+  margin-top: var(--space-4);
+}
+
+/* Tab Transitions */
 .tab-enter-active,
 .tab-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab-enter-from {
   opacity: 0;
-  transform: translateX(10px);
+  transform: translateX(20px);
 }
 
 .tab-leave-to {
   opacity: 0;
-  transform: translateX(-10px);
+  transform: translateX(-20px);
+}
+
+/* Collapse Transition */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all var(--transition-base);
+  max-height: 400px;
+  opacity: 1;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .bento-layout {
+    grid-template-columns: 180px 1fr 240px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .bento-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+
+  .bento-nav {
+    position: static;
+  }
+
+  .tab-nav {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .nav-item {
+    padding: var(--space-3) var(--space-5);
+  }
+
+  .nav-indicator {
+    display: none;
+  }
+
+  .bento-sidebar {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: var(--space-4);
+  }
+
+  .brand-mark {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .brand-title {
+    font-size: var(--text-2xl);
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .tab-nav {
+    gap: var(--space-1);
+  }
+
+  .nav-item {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .bento-sidebar {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

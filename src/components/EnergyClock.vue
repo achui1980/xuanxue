@@ -1,9 +1,9 @@
 <template>
-  <div class="energy-clock">
-    <div class="clock-header">
-      <h3 class="clock-title">我的能量时钟</h3>
-      <p class="clock-subtitle">根据你的五行特征，不同时段适合不同的活动</p>
-    </div>
+  <BaseCard class="energy-clock" elevated>
+    <template #header>
+      <h3 class="card-title">我的能量时钟</h3>
+      <p class="card-subtitle">根据你的五行特征，不同时段适合不同的活动</p>
+    </template>
 
     <div v-if="hasBirthInfo" class="clock-container">
       <!-- 活动类型标签（左侧） -->
@@ -37,7 +37,7 @@
               :style="getCellStyle(activity.id, hour)"
               @click="selectCell(activity, hour)"
             >
-              <span v-if="isCurrentHour(hour)" class="current-indicator"></span>
+              <span v-if="isCurrentHour(hour)" class="current-indicator" />
             </div>
           </div>
         </div>
@@ -59,19 +59,19 @@
     <!-- 图例 -->
     <div class="legend">
       <div class="legend-item">
-        <div class="legend-color high"></div>
+        <div class="legend-color high" />
         <span>非常适合</span>
       </div>
       <div class="legend-item">
-        <div class="legend-color medium"></div>
+        <div class="legend-color medium" />
         <span>适合</span>
       </div>
       <div class="legend-item">
-        <div class="legend-color low"></div>
+        <div class="legend-color low" />
         <span>一般</span>
       </div>
       <div class="legend-item">
-        <div class="legend-color current"></div>
+        <div class="legend-color current" />
         <span>当前时段</span>
       </div>
     </div>
@@ -80,7 +80,7 @@
     <div v-if="!hasBirthInfo" class="clock-empty">
       <p>完善出生信息后，查看你的专属能量时钟</p>
     </div>
-  </div>
+  </BaseCard>
 </template>
 
 <script setup>
@@ -88,12 +88,13 @@ import { ref, computed } from 'vue'
 import { usePersonality } from '@/composables/usePersonality'
 import { useEnergyStore } from '@/stores/energy'
 import { useAppStore } from '@/stores/app'
+import BaseCard from '@/components/common/BaseCard.vue'
 
 const { hasBirthInfo, dominantElement, dayMasterInfo } = usePersonality()
 const energyStore = useEnergyStore()
 const appStore = useAppStore()
 
-// 活动类型定义（与 actionLibrary 对应）
+// 活动类型定义
 const activityTypes = [
   { id: 'work', label: '专注工作', wuxing: 'wood', timePreference: 'morning' },
   { id: 'meeting', label: '开会沟通', wuxing: 'fire', timePreference: 'afternoon' },
@@ -107,21 +108,17 @@ const activityTypes = [
   { id: 'rest', label: '休息静养', wuxing: 'water', timePreference: 'night' }
 ]
 
-// 显示的时间段（每3小时显示一个标签，但格子是每1小时）
 const displayedHours = [0, 3, 6, 9, 12, 15, 18, 21]
 const allHours = Array.from({ length: 24 }, (_, i) => i)
 
-// 选中状态
 const selectedActivity = ref(null)
 const selectedCell = ref(null)
 
-// 当前北京时
 const currentHour = computed(() => appStore.currentBeijingHour)
 
 // 计算匹配度矩阵
 const compatibilityMatrix = computed(() => {
   if (!hasBirthInfo.value || !dominantElement.value) {
-    // 默认通用匹配度
     return getDefaultCompatibility()
   }
 
@@ -138,7 +135,6 @@ const compatibilityMatrix = computed(() => {
   return matrix
 })
 
-// 默认匹配度（无个人信息时）
 function getDefaultCompatibility() {
   const matrix = {}
 
@@ -146,9 +142,8 @@ function getDefaultCompatibility() {
     matrix[activity.id] = {}
 
     allHours.forEach((hour) => {
-      let score = 50 // 基础分
+      let score = 50
 
-      // 根据活动偏好时段调整
       if (activity.timePreference === 'morning' && hour >= 8 && hour <= 12) {
         score = 80
       } else if (activity.timePreference === 'afternoon' && hour >= 13 && hour <= 17) {
@@ -158,7 +153,7 @@ function getDefaultCompatibility() {
       } else if (activity.timePreference === 'night' && (hour >= 22 || hour <= 2)) {
         score = 75
       } else if (hour >= 0 && hour <= 6) {
-        score = 30 // 深夜凌晨普遍较低
+        score = 30
       }
 
       matrix[activity.id][hour] = {
@@ -171,12 +166,10 @@ function getDefaultCompatibility() {
   return matrix
 }
 
-// 计算个性化匹配度
 function calculateCompatibility(activity, hour) {
-  let score = 50 // 基础分
+  let score = 50
   let reasons = []
 
-  // 1. 基于五行相生相克
   const userElement = dominantElement.value
   const activityElement = activity.wuxing
 
@@ -191,7 +184,6 @@ function calculateCompatibility(activity, hour) {
     reasons.push('与你五行相克')
   }
 
-  // 2. 基于时段偏好
   if (activity.timePreference === 'morning' && hour >= 8 && hour <= 12) {
     score += 15
     reasons.push('上午精力旺盛')
@@ -206,23 +198,19 @@ function calculateCompatibility(activity, hour) {
     reasons.push('深夜思维活跃')
   }
 
-  // 3. 基于日主特征
   if (dayMasterInfo.value) {
     const dayMaster = dayMasterInfo.value.char
 
-    // 甲乙木日主：上午更适合创意
     if (['甲', '乙'].includes(dayMaster) && activity.wuxing === 'wood' && hour >= 8 && hour <= 12) {
       score += 10
       reasons.push('甲木日主上午生发')
     }
 
-    // 丙丁火日主：下午晚上更适合表达
     if (['丙', '丁'].includes(dayMaster) && activity.wuxing === 'fire' && hour >= 13) {
       score += 10
       reasons.push('火日主下午发光')
     }
 
-    // 庚辛金日主：下午更适合决策
     if (
       ['庚', '辛'].includes(dayMaster) &&
       activity.id === 'decision' &&
@@ -233,7 +221,6 @@ function calculateCompatibility(activity, hour) {
       reasons.push('金日主下午决断力强')
     }
 
-    // 壬癸水日主：深夜更适合思考
     if (
       ['壬', '癸'].includes(dayMaster) &&
       activity.wuxing === 'water' &&
@@ -244,10 +231,8 @@ function calculateCompatibility(activity, hour) {
     }
   }
 
-  // 4. 时段本身能量（从 energyStore 获取）
   const hourData = energyStore.getHourData(hour)
   if (hourData) {
-    // 如果该时段本身分数高，加分
     if (hourData.score >= 70) {
       score += 10
       reasons.push('此时段能量充沛')
@@ -256,7 +241,6 @@ function calculateCompatibility(activity, hour) {
       reasons.push('此时段能量较低')
     }
 
-    // 如果该活动是该时段推荐的，额外加分
     if (
       hourData.recommendedActions.some(
         (a) => a.includes(activity.label) || activityMatches(activity, a)
@@ -267,7 +251,6 @@ function calculateCompatibility(activity, hour) {
     }
   }
 
-  // 深夜凌晨普遍降权
   if (hour >= 0 && hour <= 5) {
     score -= 10
     if (!reasons.includes('深夜思维活跃') && !reasons.includes('水日主深夜智慧涌流')) {
@@ -275,7 +258,6 @@ function calculateCompatibility(activity, hour) {
     }
   }
 
-  // 限制在 0-100
   score = Math.max(0, Math.min(100, score))
 
   return {
@@ -284,31 +266,28 @@ function calculateCompatibility(activity, hour) {
   }
 }
 
-// 判断五行相生
 function isSupporting(from, to) {
   const supportMap = {
-    wood: 'fire', // 木生火
-    fire: 'earth', // 火生土
-    earth: 'metal', // 土生金
-    metal: 'water', // 金生水
-    water: 'wood' // 水生木
+    wood: 'fire',
+    fire: 'earth',
+    earth: 'metal',
+    metal: 'water',
+    water: 'wood'
   }
   return supportMap[from] === to
 }
 
-// 判断五行相克
 function isRestricting(from, to) {
   const restrictMap = {
-    wood: 'earth', // 木克土
-    earth: 'water', // 土克水
-    water: 'fire', // 水克火
-    fire: 'metal', // 火克金
-    metal: 'wood' // 金克木
+    wood: 'earth',
+    earth: 'water',
+    water: 'fire',
+    fire: 'metal',
+    metal: 'wood'
   }
   return restrictMap[from] === to
 }
 
-// 检查活动是否匹配推荐动作
 function activityMatches(activity, actionText) {
   const keywords = {
     work: ['工作', '专注', '深度'],
@@ -327,7 +306,6 @@ function activityMatches(activity, actionText) {
   return activityKeywords.some((kw) => actionText.includes(kw))
 }
 
-// 默认原因
 function getDefaultReason(activity, hour, score) {
   if (score >= 80) {
     if (activity.timePreference === 'morning') return '上午精力充沛，适合此类活动'
@@ -340,7 +318,6 @@ function getDefaultReason(activity, hour, score) {
   return '能量平稳，可以正常进行'
 }
 
-// 获取格子样式
 function getCellStyle(activityId, hour) {
   const data = compatibilityMatrix.value[activityId]?.[hour]
   if (!data) return {}
@@ -352,7 +329,6 @@ function getCellStyle(activityId, hour) {
   }
 }
 
-// 获取格子类名
 function getCellClasses(activityId, hour) {
   const data = compatibilityMatrix.value[activityId]?.[hour]
   if (!data) return []
@@ -370,32 +346,27 @@ function getCellClasses(activityId, hour) {
   return classes
 }
 
-// 判断是否为当前时段
 function isCurrentHour(hour) {
   return hour === currentHour.value
 }
 
-// 获取分数颜色
 function getScoreColor(score) {
-  if (score >= 80) return 'var(--success-color)'
-  if (score >= 60) return 'var(--accent-color)'
-  if (score >= 40) return 'var(--warning-color)'
-  return 'var(--danger-color)'
+  if (score >= 80) return 'var(--wood)'
+  if (score >= 60) return 'var(--water)'
+  if (score >= 40) return 'var(--earth)'
+  return 'var(--fire)'
 }
 
-// 获取分数等级
 function getScoreLevel(score) {
   if (score >= 80) return 'high'
   if (score >= 60) return 'medium'
   return 'low'
 }
 
-// 选择活动
 function selectActivity(activity) {
   selectedActivity.value = activity
 }
 
-// 选择格子
 function selectCell(activity, hour) {
   const data = compatibilityMatrix.value[activity.id]?.[hour]
   if (data) {
@@ -411,34 +382,19 @@ function selectCell(activity, hour) {
 
 <style scoped>
 .energy-clock {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
-.clock-header {
-  margin-bottom: 20px;
-}
-
-.clock-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--header-text);
-  margin: 0 0 8px 0;
-}
-
-.clock-subtitle {
-  font-size: 0.85rem;
+.card-subtitle {
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin: 0;
+  margin: var(--space-1) 0 0;
 }
 
 .clock-container {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
   overflow-x: auto;
 }
 
@@ -446,33 +402,33 @@ function selectCell(activity, hour) {
 .activity-labels {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-top: 32px; /* Align with time labels */
+  gap: var(--space-1);
+  padding-top: 32px;
 }
 
 .activity-label {
   height: 32px;
   display: flex;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   white-space: nowrap;
-  padding-right: 8px;
+  padding-right: var(--space-2);
   cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 4px;
-  padding-left: 8px;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+  padding-left: var(--space-2);
 }
 
 .activity-label:hover {
-  background: var(--bg-secondary);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
 .activity-label.selected {
-  background: rgba(var(--accent-rgb), 0.1);
-  color: var(--accent-color);
-  font-weight: 600;
+  background: rgba(96, 165, 250, 0.1);
+  color: var(--water);
+  font-weight: var(--font-semibold);
 }
 
 /* Heatmap Container */
@@ -483,14 +439,14 @@ function selectCell(activity, hour) {
 
 .time-labels {
   display: flex;
-  gap: 4px;
-  margin-bottom: 4px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
 }
 
 .time-label {
   flex: 1;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   min-width: 40px;
 }
@@ -499,37 +455,37 @@ function selectCell(activity, hour) {
 .heatmap-grid {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .heatmap-row {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .heatmap-cell {
   flex: 1;
   height: 32px;
   min-width: 40px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
   position: relative;
 }
 
 .heatmap-cell:hover {
   transform: scale(1.1);
   z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .heatmap-cell.selected {
-  box-shadow: 0 0 0 2px var(--accent-color);
+  box-shadow: 0 0 0 2px var(--water);
   z-index: 5;
 }
 
 .heatmap-cell.current {
-  box-shadow: 0 0 0 2px var(--warning-color);
+  box-shadow: 0 0 0 2px var(--earth);
 }
 
 .heatmap-cell.current::after {
@@ -540,7 +496,7 @@ function selectCell(activity, hour) {
   transform: translate(-50%, -50%);
   width: 6px;
   height: 6px;
-  background: var(--warning-color);
+  background: var(--earth);
   border-radius: 50%;
 }
 
@@ -550,66 +506,66 @@ function selectCell(activity, hour) {
   right: 2px;
   width: 6px;
   height: 6px;
-  background: var(--warning-color);
+  background: var(--earth);
   border-radius: 50%;
 }
 
 /* Cell Detail */
 .cell-detail {
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  border-left: 4px solid var(--accent-color);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-left: 4px solid var(--water);
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .detail-activity {
-  font-weight: 600;
-  color: var(--header-text);
-  font-size: 1rem;
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  font-size: var(--text-base);
 }
 
 .detail-time {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
 .detail-score {
-  font-weight: 700;
-  margin-bottom: 8px;
-  font-size: 1.1rem;
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
 }
 
 .detail-score.high {
-  color: var(--success-color);
+  color: var(--wood);
 }
 
 .detail-score.medium {
-  color: var(--accent-color);
+  color: var(--water);
 }
 
 .detail-score.low {
-  color: var(--danger-color);
+  color: var(--fire);
 }
 
 .detail-reason {
   margin: 0;
   color: var(--text-primary);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
 }
 
 /* Legend */
 .legend {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -617,43 +573,42 @@ function selectCell(activity, hour) {
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
 }
 
 .legend-color {
   width: 16px;
   height: 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .legend-color.high {
-  background: var(--success-color);
+  background: var(--wood);
 }
 
 .legend-color.medium {
-  background: var(--accent-color);
+  background: var(--water);
 }
 
 .legend-color.low {
-  background: var(--danger-color);
+  background: var(--fire);
 }
 
 .legend-color.current {
-  background: var(--warning-color);
+  background: var(--earth);
   border-radius: 50%;
 }
 
 /* Empty State */
 .clock-empty {
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--space-10) var(--space-5);
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .clock-container {
     overflow-x: scroll;
@@ -669,7 +624,7 @@ function selectCell(activity, hour) {
   }
 
   .activity-label {
-    font-size: 0.75rem;
+    font-size: 11px;
   }
 }
 </style>

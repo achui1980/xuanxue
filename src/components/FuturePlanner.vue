@@ -1,16 +1,20 @@
 <template>
-  <div class="future-planner">
-    <div class="planner-header">
-      <h3 class="planner-title">未来7天日程规划</h3>
-      <p class="planner-subtitle">根据你的五行特征，推荐每天适合的活动</p>
-    </div>
+  <BaseCard class="future-planner" elevated>
+    <template #header>
+      <h3 class="card-title">未来7天日程规划</h3>
+      <p class="card-subtitle">根据你的五行特征，推荐每天适合的活动</p>
+    </template>
 
     <div v-if="hasBirthInfo" class="calendar-container">
       <!-- 日期导航 -->
       <div class="calendar-nav">
-        <button class="nav-btn" @click="shiftDays(-1)" :disabled="shiftOffset <= 0">←</button>
+        <button class="nav-btn" @click="shiftDays(-1)" :disabled="shiftOffset <= 0">
+          <AppIcon name="arrow-left" size="sm" />
+        </button>
         <span class="nav-label">{{ dateRangeLabel }}</span>
-        <button class="nav-btn" @click="shiftDays(1)" :disabled="shiftOffset >= 7">→</button>
+        <button class="nav-btn" @click="shiftDays(1)" :disabled="shiftOffset >= 7">
+          <AppIcon name="arrow-right" size="sm" />
+        </button>
       </div>
 
       <!-- 横向日历 -->
@@ -37,11 +41,11 @@
 
           <div class="day-activities">
             <div class="activity-hint">
-              <span class="hint-label">宜</span>
+              <span class="hint-label do">宜</span>
               <span class="hint-value">{{ day.bestActivity }}</span>
             </div>
-            <div class="activity-hint caution">
-              <span class="hint-label">忌</span>
+            <div class="activity-hint avoid">
+              <span class="hint-label avoid">忌</span>
               <span class="hint-value">{{ day.avoidActivity }}</span>
             </div>
           </div>
@@ -87,11 +91,13 @@
           <div class="section-title">宜忌总结</div>
           <div class="pros-cons">
             <div class="pros">
-              <span class="pros-label">✓ 适合</span>
+              <AppIcon name="check" size="sm" />
+              <span class="pros-label">适合</span>
               <span>{{ selectedDay.pros.join('、') }}</span>
             </div>
             <div class="cons">
-              <span class="cons-label">✕ 避免</span>
+              <AppIcon name="close" size="sm" />
+              <span class="cons-label">避免</span>
               <span>{{ selectedDay.cons.join('、') }}</span>
             </div>
           </div>
@@ -100,10 +106,12 @@
     </div>
 
     <div v-else class="planner-empty">
-      <div class="empty-icon">📅</div>
+      <div class="empty-icon">
+        <AppIcon name="calendar" size="xl" />
+      </div>
       <p class="empty-text">完善出生信息后，查看未来7天规划建议</p>
     </div>
-  </div>
+  </BaseCard>
 </template>
 
 <script setup>
@@ -117,6 +125,8 @@ import {
   getAvoidActivitiesByElement,
   HEAVENLY_STEM_ELEMENTS
 } from '@/utils/tyme'
+import BaseCard from '@/components/common/BaseCard.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const userStore = useUserStore()
 const { hasBirthInfo, favorableElements } = usePersonality()
@@ -124,10 +134,8 @@ const { hasBirthInfo, favorableElements } = usePersonality()
 const shiftOffset = ref(0)
 const selectedDay = ref(null)
 
-// 星期名称
 const weekNames = ['日', '一', '二', '三', '四', '五', '六']
 
-// 计算未来7天的日期数据
 const weekDays = computed(() => {
   if (!hasBirthInfo.value) return []
 
@@ -146,7 +154,6 @@ const weekDays = computed(() => {
   return days
 })
 
-// 日期范围标签
 const dateRangeLabel = computed(() => {
   if (weekDays.value.length === 0) return ''
   const start = weekDays.value[0].shortDate
@@ -154,33 +161,26 @@ const dateRangeLabel = computed(() => {
   return `${start} - ${end}`
 })
 
-// 计算单天数据
 function calculateDayData(date) {
   const year = date.getFullYear()
   const month = date.getMonth() + 1
   const day = date.getDate()
   const dayOfWeek = date.getDay()
 
-  // 计算当天八字（用中午12点代表全天）
   const dayBazi = calculateBaZi(year, month, day, 12)
 
-  // 计算当天3个关键时段的分数
   const morningScore = calculateSlotScore(year, month, day, 10)
   const afternoonScore = calculateSlotScore(year, month, day, 14)
   const eveningScore = calculateSlotScore(year, month, day, 20)
 
-  // 综合分数（加权平均）
   const avgScore = Math.round((morningScore + afternoonScore + eveningScore) / 3)
 
-  // 根据当天日柱五行判断适合的活动
   const dayElement = HEAVENLY_STEM_ELEMENTS[dayBazi.day.stem]
   const bestActivities = getActivitiesByElement(dayElement)
   const avoidActivities = getAvoidActivitiesByElement(dayElement)
 
-  // 生成标签
   const tags = generateDayTags(avgScore, dayElement)
 
-  // 时间段数据
   const timeSlots = [
     {
       hour: 9,
@@ -222,9 +222,8 @@ function calculateDayData(date) {
   }
 }
 
-// 计算某时段分数（使用V2算法）
 function calculateSlotScore(year, month, day, hour) {
-  const dayBazi = calculateBaZi(year, month, day, 12) // 用中午代表当天的日柱
+  const dayBazi = calculateBaZi(year, month, day, 12)
   const hourBazi = calculateBaZi(year, month, day, hour)
   if (!dayBazi || !hourBazi) return 50
 
@@ -234,13 +233,12 @@ function calculateSlotScore(year, month, day, hour) {
       favorable: userStore.profile.favorable,
       unfavorable: userStore.profile.unfavorable
     },
-    dayBazi, // 日柱（V2新增）
-    hourBazi, // 时辰
-    false // 不输出调试日志（生产环境）
+    dayBazi,
+    hourBazi,
+    false
   )
 }
 
-// 生成当天标签
 function generateDayTags(score, element) {
   const tags = []
 
@@ -248,7 +246,6 @@ function generateDayTags(score, element) {
   else if (score >= 60) tags.push('平吉')
   else tags.push('谨慎')
 
-  // 根据五行和喜忌添加标签
   if (favorableElements.value.includes(element)) {
     tags.push(`喜${element}`)
   }
@@ -256,14 +253,12 @@ function generateDayTags(score, element) {
   return tags
 }
 
-// 获取分数等级
 function getScoreLevel(score) {
   if (score >= 75) return 'high'
   if (score >= 50) return 'medium'
   return 'low'
 }
 
-// 获取日期卡片类名
 function getDayClasses(day) {
   const classes = []
   classes.push(getScoreLevel(day.score))
@@ -272,7 +267,6 @@ function getDayClasses(day) {
     classes.push('selected')
   }
 
-  // 标记今天
   const today = new Date().toISOString().split('T')[0]
   if (day.date === today) {
     classes.push('today')
@@ -281,23 +275,19 @@ function getDayClasses(day) {
   return classes
 }
 
-// 获取时段类名
 function getSlotClasses(slot) {
   return getScoreLevel(slot.score)
 }
 
-// 选择日期
 function selectDay(day) {
   selectedDay.value = day
 }
 
-// 切换日期范围
 function shiftDays(offset) {
   shiftOffset.value = Math.max(0, Math.min(7, shiftOffset.value + offset))
   selectedDay.value = null
 }
 
-// 自动选中今天
 watch(
   weekDays,
   (days) => {
@@ -311,28 +301,17 @@ watch(
 
 <style scoped>
 .future-planner {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
-.planner-header {
-  margin-bottom: 20px;
-}
-
-.planner-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--header-text);
-  margin: 0 0 8px 0;
-}
-
-.planner-subtitle {
-  font-size: 0.85rem;
+.card-subtitle {
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin: 0;
+  margin: var(--space-1) 0 0;
+}
+
+.calendar-container {
+  margin-top: var(--space-5);
 }
 
 /* Calendar Navigation */
@@ -340,25 +319,27 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding: 0 4px;
+  margin-bottom: var(--space-4);
+  padding: 0 var(--space-1);
 }
 
 .nav-btn {
-  background: var(--bg-secondary);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 1rem;
   color: var(--text-primary);
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .nav-btn:hover:not(:disabled) {
-  background: var(--accent-color);
-  color: white;
+  background: var(--ink-medium);
+  border-color: var(--water);
 }
 
 .nav-btn:disabled {
@@ -367,39 +348,39 @@ watch(
 }
 
 .nav-label {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: var(--font-medium);
 }
 
 /* Calendar Row */
 .calendar-row {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);
   -webkit-overflow-scrolling: touch;
 }
 
 .day-card {
   flex: 1;
   min-width: 100px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 12px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
   border: 2px solid transparent;
 }
 
 .day-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 .day-card.selected {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+  border-color: var(--water);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
 }
 
 .day-card.today {
@@ -410,115 +391,130 @@ watch(
   content: '今天';
   position: absolute;
   top: -8px;
-  right: 8px;
-  background: var(--accent-color);
-  color: white;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 600;
+  right: var(--space-2);
+  background: var(--water);
+  color: var(--ink-black);
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-bold);
 }
 
 .day-card.high {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.3);
 }
 
 .day-card.medium {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.3);
 }
 
 .day-card.low {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.3);
 }
 
 .day-header {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .day-name {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   display: block;
 }
 
 .day-date {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--header-text);
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
 }
 
 .day-score {
   text-align: center;
-  font-weight: 700;
-  font-size: 1.2rem;
-  margin-bottom: 8px;
+  font-weight: var(--font-bold);
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-2);
 }
 
 .day-score.high {
-  color: var(--success-color);
+  color: var(--wood);
 }
 
 .day-score.medium {
-  color: var(--accent-color);
+  color: var(--water);
 }
 
 .day-score.low {
-  color: var(--danger-color);
+  color: var(--fire);
 }
 
 .day-tags {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .day-tag {
-  font-size: 0.7rem;
-  background: var(--card-bg);
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-size: var(--text-xs);
+  background: var(--bg-secondary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
 }
 
 .day-activities {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
 
 .activity-hint {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
-.activity-hint.caution {
+.activity-hint.avoid {
   opacity: 0.7;
 }
 
 .hint-label {
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: var(--font-bold);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+}
+
+.hint-label.do {
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--wood);
+}
+
+.hint-label.avoid {
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--fire);
 }
 
 .hint-value {
   color: var(--text-primary);
   text-align: right;
   flex: 1;
-  margin-left: 4px;
+  margin-left: var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Day Detail */
 .day-detail {
-  margin-top: 20px;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
   animation: slideDown 0.3s ease;
 }
 
@@ -537,41 +533,41 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .detail-date {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--header-text);
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
 }
 
 .detail-score {
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  font-weight: var(--font-bold);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
 }
 
 .detail-score.high {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--success-color);
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--wood);
 }
 
 .detail-score.medium {
-  background: rgba(59, 130, 246, 0.2);
-  color: var(--accent-color);
+  background: rgba(96, 165, 250, 0.2);
+  color: var(--water);
 }
 
 .detail-score.low {
-  background: rgba(239, 68, 68, 0.2);
-  color: var(--danger-color);
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--fire);
 }
 
 .detail-section {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .detail-section:last-child {
@@ -579,83 +575,84 @@ watch(
 }
 
 .section-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-3);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .bazi-display {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: center;
 }
 
 .bazi-pillar {
-  background: var(--card-bg);
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 1rem;
+  background: var(--bg-secondary);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   color: var(--text-primary);
-  font-weight: 600;
+  font-weight: var(--font-semibold);
+  font-family: var(--font-display);
 }
 
 .bazi-pillar.day {
-  background: rgba(var(--accent-rgb), 0.1);
-  color: var(--accent-color);
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--water);
 }
 
 .time-slots {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .time-slot {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
 }
 
 .time-slot.high {
-  border-left: 3px solid var(--success-color);
+  border-left: 3px solid var(--wood);
 }
 
 .time-slot.medium {
-  border-left: 3px solid var(--accent-color);
+  border-left: 3px solid var(--water);
 }
 
 .time-slot.low {
-  border-left: 3px solid var(--danger-color);
+  border-left: 3px solid var(--fire);
 }
 
 .slot-time {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
   min-width: 40px;
 }
 
 .slot-score {
-  font-weight: 700;
+  font-weight: var(--font-bold);
   min-width: 50px;
 }
 
 .slot-score.high {
-  color: var(--success-color);
+  color: var(--wood);
 }
 
 .slot-score.medium {
-  color: var(--accent-color);
+  color: var(--water);
 }
 
 .slot-score.low {
-  color: var(--danger-color);
+  color: var(--fire);
 }
 
 .slot-activity {
@@ -667,69 +664,78 @@ watch(
 .pros-cons {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .pros,
 .cons {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 0.9rem;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.pros svg {
+  color: var(--wood);
+}
+
+.cons svg {
+  color: var(--fire);
 }
 
 .pros-label,
 .cons-label {
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  font-weight: var(--font-bold);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
 }
 
 .pros-label {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--success-color);
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--wood);
 }
 
 .cons-label {
-  background: rgba(239, 68, 68, 0.2);
-  color: var(--danger-color);
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--fire);
 }
 
 /* Empty State */
 .planner-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--space-10) var(--space-5);
 }
 
 .empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  color: var(--text-tertiary);
 }
 
 .empty-text {
   color: var(--text-secondary);
   margin: 0;
-  font-size: 0.95rem;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .calendar-row {
-    gap: 6px;
+    gap: var(--space-1);
   }
 
   .day-card {
     min-width: 90px;
-    padding: 10px;
+    padding: var(--space-2);
   }
 
   .day-date {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 
   .day-score {
-    font-size: 1.1rem;
+    font-size: var(--text-lg);
   }
 
   .bazi-display {

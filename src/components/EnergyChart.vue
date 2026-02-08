@@ -1,93 +1,99 @@
 <template>
   <div class="energy-chart-container">
-    <div class="energy-chart" :class="{ overview: overview }">
-      <div
-        v-for="(hour, index) in hoursData"
-        :key="hour.hour"
-        class="hour-bar-wrapper"
-        @click="handleBarClick(index)"
-      >
+    <div class="chart-wrapper">
+      <div class="energy-chart">
         <div
-          class="hour-bar"
-          :class="getBarClasses(hour, index)"
-          :style="{ height: getBarHeight(hour.score) }"
+          v-for="(hour, index) in hoursData"
+          :key="hour.hour"
+          class="hour-bar-wrapper"
+          :class="{
+            'is-selected': index === selectedHour,
+            'is-current': index === currentBeijingHour
+          }"
+          @click="handleBarClick(index)"
         >
-          <!-- Optional marker for ShenSha or special events -->
-          <div
-            v-if="showShenSha && (hour.stars.length > 0 || hour.clashes.length > 0)"
-            class="shensha-dot"
-          ></div>
+          <div class="bar-area">
+            <div
+              class="hour-bar"
+              :class="getBarClasses(hour, index)"
+              :style="{ height: getBarHeight(hour.score) }"
+            />
+            <div v-if="showShenSha && hasShenSha(hour)" class="shensha-indicator" />
+          </div>
+          <div class="hour-labels">
+            <span class="hour-number" :class="{ 'is-major': index % 2 === 0 }">
+              {{ index }}
+            </span>
+            <span class="hour-branch">{{ getBranchForHour(index) }}</span>
+          </div>
         </div>
-        <div class="hour-label">{{ formatHourLabel(index) }}</div>
       </div>
+
+      <!-- Area gradient overlay for depth -->
+      <div class="chart-overlay" />
     </div>
 
-    <!-- Detail Overlay/Tooltip Area if needed, or just below text -->
-    <div v-if="!overview && selectedHourData" class="selected-hour-detail">
-      <div class="detail-header">
-        <span class="detail-time">{{ selectedHourData.rangeLabel }}</span>
-        <span class="detail-score" :class="energyStore.getEnergyLevel(selectedHourData.score)"
-          >{{ selectedHourData.score }}分</span
-        >
-      </div>
-      <div class="detail-body">
-        <!-- Direct action-oriented text instead of element terminology -->
-        <div class="detail-suitability" :class="energyStore.getEnergyLevel(selectedHourData.score)">
-          此时段：{{ getSuitabilityText(selectedHourData.score) }}
+    <!-- Detail Panel -->
+    <Transition name="slide">
+      <div v-if="!overview && selectedHourData" class="detail-panel">
+        <div class="detail-header">
+          <div class="time-info">
+            <span class="time-range">{{ selectedHourData.rangeLabel }}</span>
+            <span class="time-branch">{{ getBranchForHour(selectedHour) }}时</span>
+            <span class="time-shensha" v-if="showShenSha">
+              <span v-for="s in selectedHourData.stars" :key="s.name" class="star-badge">
+                {{ s.name }}
+              </span>
+              <span v-for="c in selectedHourData.clashes" :key="c.name" class="clash-badge">
+                {{ c.name }}
+              </span>
+            </span>
+          </div>
+          <div class="score-badge" :class="energyStore.getEnergyLevel(selectedHourData.score)">
+            <span class="score-value">{{ selectedHourData.score }}</span>
+            <span class="score-unit">分</span>
+          </div>
         </div>
 
-        <!-- Tags showing why -->
-        <div class="detail-tags">
-          <span v-for="tag in selectedHourData.reasonTags" :key="tag" class="reason-tag">{{
-            tag
-          }}</span>
-        </div>
+        <div class="detail-body">
+          <div class="suitability-text" :class="energyStore.getEnergyLevel(selectedHourData.score)">
+            {{ getSuitabilityText(selectedHourData.score) }}
+          </div>
 
-        <!-- Recommended actions - most direct guidance -->
-        <div
-          v-if="
-            selectedHourData.recommendedActions && selectedHourData.recommendedActions.length > 0
-          "
-          class="detail-actions recommended"
-        >
-          <span class="action-label">建议做：</span>
-          <span class="action-list">{{
-            selectedHourData.recommendedActions.slice(0, 3).join('、')
-          }}</span>
-        </div>
+          <div class="reason-tags">
+            <span v-for="tag in selectedHourData.reasonTags" :key="tag" class="reason-tag">
+              {{ tag }}
+            </span>
+          </div>
 
-        <!-- Avoid actions - what not to do -->
-        <div
-          v-if="selectedHourData.avoidActions && selectedHourData.avoidActions.length > 0"
-          class="detail-actions avoid"
-        >
-          <span class="action-label">建议避免：</span>
-          <span class="action-list">{{
-            selectedHourData.avoidActions.slice(0, 2).join('、')
-          }}</span>
-        </div>
+          <div v-if="selectedHourData.recommendedActions?.length" class="action-section">
+            <div class="section-header">
+              <ElementIcon element="wood" size="sm" />
+              <span>建议行动</span>
+            </div>
+            <p class="action-text">
+              {{ selectedHourData.recommendedActions.slice(0, 3).join('、') }}
+            </p>
+          </div>
 
-        <!-- Brief explanation -->
-        <div class="detail-brief">{{ selectedHourData.brief }}</div>
+          <div v-if="selectedHourData.avoidActions?.length" class="action-section">
+            <div class="section-header avoid">
+              <ElementIcon element="fire" size="sm" />
+              <span>建议避免</span>
+            </div>
+            <p class="action-text avoid">
+              {{ selectedHourData.avoidActions.slice(0, 2).join('、') }}
+            </p>
+          </div>
 
-        <!-- 五行能量参考（始终显示） -->
-        <div class="detail-element">
-          <span class="element-label">五行：</span>
-          <span class="element-value">{{ selectedHourData.element }}旺</span>
-          <span class="element-hint">（{{ selectedHourData.elementHint }}）</span>
-        </div>
-
-        <!-- Technical details only in advanced mode -->
-        <div v-if="showShenSha" class="detail-shensha">
-          <span v-for="s in selectedHourData.stars" :key="s.name" class="star-tag"
-            >✨{{ s.name }}</span
-          >
-          <span v-for="c in selectedHourData.clashes" :key="c.name" class="clash-tag"
-            >⚠️{{ c.name }}</span
-          >
+          <div class="element-section">
+            <ElementIcon :element="getElementKey(selectedHourData.element)" size="sm" />
+            <span class="element-label">{{ selectedHourData.element }}旺</span>
+            <span class="element-desc">{{ selectedHourData.elementHint }}</span>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </div>
 </template>
 
@@ -95,6 +101,8 @@
 import { computed } from 'vue'
 import { useEnergyStore } from '@/stores/energy'
 import { useHourSelection } from '@/composables/useHourSelection'
+import { useBeijingTime } from '@/composables/useBeijingTime'
+import ElementIcon from '@/components/icons/ElementIcon.vue'
 
 const props = defineProps({
   overview: {
@@ -107,7 +115,7 @@ const props = defineProps({
   },
   selectMode: {
     type: String,
-    default: 'jump', // 'jump' | 'select' - jump switches to today tab, select just updates selection
+    default: 'jump',
     validator: (value) => ['jump', 'select'].includes(value)
   },
   highlights: {
@@ -121,13 +129,13 @@ const emit = defineEmits(['hourSelected'])
 const energyStore = useEnergyStore()
 const { selectedHour, currentBeijingHour, selectHour, jumpToHour, selectedHourData } =
   useHourSelection()
+const { getBranchForHour } = useBeijingTime()
 
 const hoursData = computed(() => energyStore.hoursData)
 
 function getBarHeight(score) {
-  const maxHeight = props.overview ? 50 : 120
-  const minHeight = props.overview ? 4 : 10
-  // Normalize score 0-100 to height
+  const maxHeight = props.overview ? 40 : 120
+  const minHeight = 4
   const height = Math.max(minHeight, (score / 100) * maxHeight)
   return `${height}px`
 }
@@ -135,21 +143,17 @@ function getBarHeight(score) {
 function getBarClasses(hour, index) {
   const classes = []
 
-  // Energy level classes
   const energyLevel = energyStore.getEnergyLevel(hour.score)
-  classes.push(energyLevel)
+  classes.push(`level-${energyLevel}`)
 
-  // Selected hour
   if (index === selectedHour.value) {
-    classes.push('selected')
+    classes.push('is-selected')
   }
 
-  // Current hour
   if (index === currentBeijingHour.value) {
-    classes.push('current')
+    classes.push('is-current')
   }
 
-  // Highlights for intent mode
   if (props.highlights.top.includes(index)) {
     classes.push('highlight-top')
   }
@@ -160,18 +164,31 @@ function getBarClasses(hour, index) {
   return classes
 }
 
+function hasShenSha(hour) {
+  return hour.stars.length > 0 || hour.clashes.length > 0
+}
+
 function getSuitabilityText(score) {
-  // Direct, actionable text based on score
-  if (score >= 80) return '非常适合'
-  if (score >= 70) return '适合'
-  if (score >= 50) return '一般'
-  if (score >= 30) return '不宜'
-  return '尽量避开'
+  if (score >= 85) return '大吉时辰，诸事顺遂'
+  if (score >= 70) return '吉时，适合重要事务'
+  if (score >= 50) return '平时，凡事谨慎'
+  if (score >= 30) return '凶时，保守为宜'
+  return '大凶时辰，诸事不宜'
+}
+
+function getElementKey(elementName) {
+  const map = {
+    金: 'metal',
+    木: 'wood',
+    水: 'water',
+    火: 'fire',
+    土: 'earth'
+  }
+  return map[elementName] || 'earth'
 }
 
 function handleBarClick(index) {
   if (props.selectMode === 'select') {
-    // Just select without jumping tabs
     selectHour(index)
   } else if (props.overview) {
     jumpToHour(index)
@@ -180,11 +197,6 @@ function handleBarClick(index) {
   }
   emit('hourSelected', index)
 }
-
-function formatHourLabel(index) {
-  if (index % 3 === 0) return index
-  return ''
-}
 </script>
 
 <style scoped>
@@ -192,12 +204,17 @@ function formatHourLabel(index) {
   width: 100%;
 }
 
+.chart-wrapper {
+  position: relative;
+  padding: var(--space-4) 0;
+}
+
 .energy-chart {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  height: 150px;
-  padding-bottom: 20px; /* Space for labels */
+  height: 160px;
+  padding-bottom: var(--space-8);
   position: relative;
   gap: 2px;
 }
@@ -205,9 +222,9 @@ function formatHourLabel(index) {
 .energy-chart.overview {
   height: 60px;
   padding-bottom: 0;
-  gap: 1px;
 }
 
+/* Bar Wrapper */
 .hour-bar-wrapper {
   flex: 1;
   display: flex;
@@ -215,230 +232,349 @@ function formatHourLabel(index) {
   align-items: center;
   position: relative;
   cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
+.hour-bar-wrapper:hover {
+  transform: translateY(-2px);
+}
+
+.bar-area {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Hour Bar */
 .hour-bar {
   width: 100%;
-  background: var(--bg-secondary); /* Default low contrast */
-  border-radius: 4px 4px 0 0;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  min-width: 3px;
+  max-width: 20px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: all var(--transition-base);
   position: relative;
-  min-width: 4px;
 }
 
-.hour-bar:hover {
-  opacity: 0.8;
-  transform: scaleY(1.05);
+/* Energy Level Colors */
+.hour-bar.level-high {
+  background: linear-gradient(180deg, var(--wood) 0%, rgba(74, 222, 128, 0.6) 100%);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
 }
 
-.hour-bar.low {
-  background: var(--bg-secondary);
-  opacity: 0.6;
-} /* Low energy muted */
-.hour-bar.medium {
-  background: var(--accent-color);
-  opacity: 0.5;
-}
-.hour-bar.high {
-  background: var(--success-color);
-  opacity: 0.6;
+.hour-bar.level-medium {
+  background: linear-gradient(180deg, var(--metal) 0%, rgba(232, 196, 102, 0.6) 100%);
 }
 
-.hour-bar.selected {
+.hour-bar.level-low {
+  background: linear-gradient(180deg, var(--text-tertiary) 0%, rgba(100, 116, 139, 0.4) 100%);
+}
+
+/* Selected State */
+.hour-bar.is-selected {
   opacity: 1;
-  transform: scaleY(1.1);
-  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.3);
+  transform: scaleX(1.3);
+  box-shadow: 0 0 15px var(--accent-glow);
   z-index: 2;
 }
-.hour-bar.selected.low {
-  background: var(--text-secondary);
-}
-.hour-bar.selected.medium {
-  background: var(--accent-color);
-}
-.hour-bar.selected.high {
-  background: var(--success-color);
-}
 
-/* Highlight styles for intent mode - glowing borders for recommended/caution hours */
-.hour-bar.highlight-top {
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.6);
-  z-index: 3;
-}
-.hour-bar.highlight-caution {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.5);
-  z-index: 3;
+.hour-bar-wrapper.is-selected .hour-bar {
+  background: linear-gradient(180deg, var(--metal) 0%, var(--metal-dim) 100%);
 }
 
 /* Current Hour Marker */
-.hour-bar.current::after {
+.hour-bar-wrapper.is-current::before {
   content: '';
   position: absolute;
-  bottom: -6px;
+  bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+  width: 6px;
+  height: 6px;
   background: var(--text-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--text-primary);
+  z-index: 3;
 }
 
-.hour-label {
-  position: absolute;
-  bottom: -20px;
-  font-size: 0.7rem;
-  color: var(--text-secondary);
+/* Highlight States */
+.hour-bar.highlight-top {
+  box-shadow:
+    0 0 0 2px var(--wood),
+    0 0 10px rgba(74, 222, 128, 0.5);
+  z-index: 3;
 }
 
-.shensha-dot {
+.hour-bar.highlight-caution {
+  box-shadow:
+    0 0 0 2px var(--fire),
+    0 0 10px rgba(248, 113, 113, 0.5);
+  z-index: 3;
+}
+
+/* Shensha Indicator */
+.shensha-indicator {
   position: absolute;
   top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
   width: 4px;
   height: 4px;
+  background: var(--warning);
   border-radius: 50%;
-  background: var(--warning-color);
+  box-shadow: 0 0 4px var(--warning);
 }
 
-/* Detail Section */
-.selected-hour-detail {
-  margin-top: 10px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-color);
-  animation: slideDown 0.2s ease-out;
+/* Labels */
+.hour-labels {
+  position: absolute;
+  bottom: -32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hour-number {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: var(--font-medium);
+}
+
+.hour-number.is-major {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: var(--font-semibold);
+}
+
+.hour-branch {
+  font-size: 9px;
+  color: var(--metal);
+  font-family: var(--font-display);
+}
+
+/* Chart Overlay */
+.chart-overlay {
+  position: absolute;
+  bottom: 32px;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(180deg, transparent 0%, var(--bg-secondary) 100%);
+  pointer-events: none;
+}
+
+/* Detail Panel */
+.detail-panel {
+  margin-top: var(--space-4);
+  padding: var(--space-5);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
 }
 
-.detail-time {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.detail-score {
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.9rem;
-}
-.detail-score.high {
-  color: var(--success-color);
-  background: rgba(16, 185, 129, 0.1);
-}
-.detail-score.medium {
-  color: var(--accent-color);
-  background: rgba(59, 130, 246, 0.1);
-}
-.detail-score.low {
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-}
-
-.detail-body {
-  font-size: 0.9rem;
-}
-
-.detail-element {
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  margin-bottom: 6px;
-}
-
-.detail-tags,
-.detail-shensha {
+.time-info {
   display: flex;
-  gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.star-tag {
-  color: var(--warning-color);
-  background: rgba(245, 158, 11, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+.time-range {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
 }
 
-.clash-tag {
-  color: var(--danger-color);
-  background: rgba(239, 68, 68, 0.1);
+.time-branch {
+  font-size: var(--text-lg);
+  color: var(--metal);
+  font-weight: var(--font-medium);
+}
+
+.time-shensha {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.star-badge {
   padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  background: rgba(232, 196, 102, 0.15);
+  color: var(--metal);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.clash-badge {
+  padding: 2px 6px;
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--fire);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.score-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.score-badge.high {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--wood);
+}
+
+.score-badge.medium {
+  background: rgba(232, 196, 102, 0.15);
+  color: var(--metal);
+}
+
+.score-badge.low {
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+}
+
+.score-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+}
+
+.score-unit {
+  font-size: var(--text-sm);
+}
+
+/* Detail Body */
+.detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.suitability-text {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+}
+
+.suitability-text.high {
+  color: var(--wood);
+}
+.suitability-text.medium {
+  color: var(--metal);
+}
+.suitability-text.low {
+  color: var(--text-secondary);
+}
+
+.reason-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .reason-tag {
+  padding: var(--space-1) var(--space-3);
   background: var(--bg-secondary);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  border: 1px solid var(--border-subtle);
 }
 
-.detail-brief {
-  line-height: 1.5;
+.action-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--wood);
+}
+
+.section-header.avoid {
+  color: var(--fire);
+}
+
+.action-text {
+  font-size: var(--text-base);
   color: var(--text-primary);
-  margin-top: 12px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border-color);
+  margin: 0;
+  line-height: var(--leading-relaxed);
 }
 
-/* Direct suitability text - main conclusion */
-.detail-suitability {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 8px;
+.action-text.avoid {
+  color: var(--fire);
 }
-.detail-suitability.high {
-  color: var(--success-color);
-}
-.detail-suitability.medium {
-  color: var(--accent-color);
-}
-.detail-suitability.low {
+
+.element-section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
-/* Recommended and avoid actions */
-.detail-actions {
-  display: flex;
-  align-items: baseline;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-}
-
-.detail-actions .action-label {
-  font-weight: 600;
-  margin-right: 8px;
-  flex-shrink: 0;
-}
-
-.detail-actions.recommended .action-label {
-  color: var(--success-color);
-}
-
-.detail-actions.avoid .action-label {
-  color: var(--danger-color);
-}
-
-.detail-actions .action-list {
+.element-label {
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
+.element-desc {
+  color: var(--text-tertiary);
+}
+
+/* Transitions */
+.slide-enter-active,
+.slide-leave-active {
+  transition: all var(--transition-base);
+  max-height: 500px;
+  opacity: 1;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .energy-chart {
+    height: 140px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .hour-number {
+    font-size: 9px;
+  }
+
+  .hour-branch {
+    font-size: 8px;
+  }
+
+  .detail-panel {
+    padding: var(--space-4);
+  }
+
+  .time-range {
+    font-size: var(--text-lg);
   }
 }
 </style>

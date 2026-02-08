@@ -1,225 +1,258 @@
 <template>
   <div class="today-tab">
-    <!-- Fortune Card Section -->
-    <div class="card fortune-card">
-      <div v-if="isGuest" class="guest-cta-block">
-        <div class="guest-cta-content">
-          <span class="guest-cta-title">通用指引（未填写出生信息）</span>
-          <button class="guest-cta-btn" @click="goToProfile">去完善个人信息</button>
-        </div>
-      </div>
-
-      <div class="fortune-header">
-        <div class="fortune-date">
-          <span class="lunar-text">{{ dailyFortune.lunarText }}</span>
-        </div>
-        <div class="fortune-score-container" :class="dailyFortune.overall.level">
-          <div class="score-circle">
-            <span class="score-value">{{ dailyFortune.overall.score }}</span>
-            <span class="score-label">今日运势</span>
-          </div>
-          <div class="score-text">{{ dailyFortune.overall.text }}</div>
-        </div>
-      </div>
-
-      <div class="fortune-quote">"{{ dailyFortune.quote }}"</div>
-
-      <div class="aspects-grid">
-        <div class="aspect-item">
-          <span class="aspect-label">事业</span>
-          <div class="aspect-bar-container">
-            <div
-              class="aspect-bar"
-              :style="{ width: dailyFortune.aspects.career.score + '%' }"
-            ></div>
-          </div>
-          <span class="aspect-value">{{ dailyFortune.aspects.career.text }}</span>
-        </div>
-        <div class="aspect-item">
-          <span class="aspect-label">财富</span>
-          <div class="aspect-bar-container">
-            <div
-              class="aspect-bar"
-              :style="{ width: dailyFortune.aspects.wealth.score + '%' }"
-            ></div>
-          </div>
-          <span class="aspect-value">{{ dailyFortune.aspects.wealth.text }}</span>
-        </div>
-        <div class="aspect-item">
-          <span class="aspect-label">情感</span>
-          <div class="aspect-bar-container">
-            <div class="aspect-bar" :style="{ width: dailyFortune.aspects.love.score + '%' }"></div>
-          </div>
-          <span class="aspect-value">{{ dailyFortune.aspects.love.text }}</span>
-        </div>
-        <div class="aspect-item">
-          <span class="aspect-label">健康</span>
-          <div class="aspect-bar-container">
-            <div
-              class="aspect-bar"
-              :style="{ width: dailyFortune.aspects.health.score + '%' }"
-            ></div>
-          </div>
-          <span class="aspect-value">{{ dailyFortune.aspects.health.text }}</span>
-        </div>
-      </div>
-
-      <div class="tags-container">
-        <span v-for="tag in dailyFortune.tags" :key="tag" class="fortune-tag">
-          {{ tag }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Quick Actions Section -->
-    <div class="section-title">
-      <span>今日时机速览</span>
-      <span v-if="isGuest" class="guest-badge">通用指引</span>
-    </div>
-    <div class="card quick-actions-card">
-      <div class="quick-action-group">
-        <div class="group-label success"><span class="icon">✨</span> 最佳时段</div>
-        <div class="action-buttons">
-          <button
-            v-for="hour in dailyFortune.topHours"
-            :key="hour.hour"
-            class="time-btn success"
-            @click="scrollToHour(hour.hour)"
-          >
-            <span class="time-range">{{ hour.rangeLabel.split('-')[0] }}</span>
-            <span class="time-tag" v-if="hour.reasonTags[0]">{{ hour.reasonTags[0] }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="quick-action-group">
-        <div class="group-label caution"><span class="icon">⚠️</span> 需谨慎</div>
-        <div class="action-buttons">
-          <button
-            v-for="hour in dailyFortune.cautionHours"
-            :key="hour.hour"
-            class="time-btn caution"
-            @click="scrollToHour(hour.hour)"
-          >
-            <span class="time-range">{{ hour.rangeLabel.split('-')[0] }}</span>
-            <span class="time-tag" v-if="hour.reasonTags[0]">{{ hour.reasonTags[0] }}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Intent Mode Section -->
-    <div class="section-title">
-      <span>我想...</span>
-      <span v-if="isGuest" class="guest-badge">通用指引</span>
-    </div>
-    <div class="card intent-card">
-      <div class="intent-selector">
-        <select v-model="selectedIntent" @change="updateIntentRecommendation">
-          <option value="" disabled>选择一个事项...</option>
-          <option v-for="action in actionLibrary" :key="action.id" :value="action.id">
-            {{ action.label }}
-          </option>
-        </select>
-      </div>
-
-      <div v-if="intentResult" class="intent-result">
-        <div v-if="intentResult.top.length > 0" class="recommendation-list">
-          <div class="rec-title">推荐时段：</div>
-          <div class="rec-items">
-            <div v-for="h in intentResult.top" :key="h.hour" class="rec-item success">
-              <span class="rec-time">{{ h.rangeLabel }}</span>
-              <span class="rec-score">{{ h.score }}分</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="intentResult.caution.length > 0" class="recommendation-list">
-          <div class="rec-title">避开时段：</div>
-          <div class="rec-items">
-            <div v-for="h in intentResult.caution" :key="h.hour" class="rec-item caution">
-              <span class="rec-time">{{ h.rangeLabel }}</span>
-            </div>
-          </div>
-        </div>
-
-        <button class="add-plan-btn" @click="addToPlan" :disabled="!selectedIntent">
-          ➕ 加入今日计划
+    <!-- Guest CTA -->
+    <div v-if="isGuest" class="guest-banner animate-fadeIn">
+      <div class="guest-content">
+        <AppIcon name="info" size="sm" />
+        <span>当前显示通用指引，完善出生信息可获得个性化分析</span>
+        <button class="btn btn-primary btn-sm" @click="goToProfile">
+          去完善
+          <AppIcon name="arrow-right" size="sm" />
         </button>
       </div>
     </div>
 
-    <!-- Detailed Timeline Section -->
-    <div class="section-title">
-      <span>24小时详情</span>
-      <span v-if="isGuest" class="guest-badge">通用指引</span>
-      <button v-if="!isGuest" class="toggle-mode-btn" @click="toggleAdvancedMode">
-        {{ advancedMode ? '切回简洁模式' : '查看专业模式' }}
-      </button>
-    </div>
+    <!-- Bento Grid Layout -->
+    <div class="bento-grid">
+      <!-- Fortune Card - Main Feature -->
+      <BaseCard class="fortune-card bento-span-2" elevated>
+        <div class="fortune-content">
+          <div class="fortune-header">
+            <div class="date-display">
+              <span class="lunar-date">{{ dailyFortune.lunarText }}</span>
+              <span class="solar-date">{{ currentDate }}</span>
+            </div>
+            <div class="fortune-badge" :class="dailyFortune.overall.level">
+              <span class="score-value">{{ dailyFortune.overall.score }}</span>
+              <span class="score-label">综合评分</span>
+            </div>
+          </div>
 
-    <!-- Current Hour Quick Summary - always visible -->
-    <div v-if="selectedHourData" class="card current-hour-card">
-      <div class="current-hour-header">
-        <span class="current-time">{{ selectedHourData.rangeLabel }}</span>
-        <span
-          class="current-suitability"
-          :class="energyStore.getEnergyLevel(selectedHourData.score)"
+          <div class="fortune-body">
+            <p class="fortune-quote">「{{ dailyFortune.quote }}」</p>
+
+            <!-- Aspect Bars -->
+            <div class="aspects-grid">
+              <div v-for="(aspect, key) in dailyFortune.aspects" :key="key" class="aspect-item">
+                <span class="aspect-name">{{ aspectNames[key] }}</span>
+                <div class="aspect-bar-bg">
+                  <div
+                    class="aspect-bar"
+                    :class="`level-${getLevel(aspect.score)}`"
+                    :style="{ width: `${aspect.score}%` }"
+                  />
+                </div>
+                <span class="aspect-score">{{ aspect.text }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="fortune-tags">
+            <span v-for="tag in dailyFortune.tags" :key="tag" class="tag">
+              {{ tag }}
+            </span>
+          </div>
+        </div>
+      </BaseCard>
+
+      <!-- Quick Actions Card -->
+      <BaseCard class="quick-actions-card" title="今日时机" elevated>
+        <div class="action-section">
+          <div class="action-header success">
+            <ElementIcon element="wood" size="sm" />
+            <span>最佳时段</span>
+          </div>
+          <div class="time-chips">
+            <button
+              v-for="hour in dailyFortune.topHours"
+              :key="hour.hour"
+              class="time-chip success"
+              @click="selectHour(hour.hour)"
+            >
+              <span class="chip-time">{{ hour.hour }}:00</span>
+              <span class="chip-branch">{{ getBranchForHour(hour.hour) }}时</span>
+              <span v-if="hour.reasonTags[0]" class="chip-tag">{{ hour.reasonTags[0] }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="divider" />
+
+        <div class="action-section">
+          <div class="action-header caution">
+            <ElementIcon element="fire" size="sm" />
+            <span>需谨慎</span>
+          </div>
+          <div class="time-chips">
+            <button
+              v-for="hour in dailyFortune.cautionHours"
+              :key="hour.hour"
+              class="time-chip caution"
+              @click="selectHour(hour.hour)"
+            >
+              <span class="chip-time">{{ hour.hour }}:00</span>
+              <span class="chip-branch">{{ getBranchForHour(hour.hour) }}时</span>
+            </button>
+          </div>
+        </div>
+      </BaseCard>
+
+      <!-- Intent Card -->
+      <BaseCard class="intent-card" title="择事问时" elevated>
+        <div class="intent-selector">
+          <select
+            v-model="selectedIntent"
+            class="input select"
+            @change="updateIntentRecommendation"
+          >
+            <option value="" disabled>选择要办理的事项...</option>
+            <option v-for="action in actionLibrary" :key="action.id" :value="action.id">
+              {{ action.label }}
+            </option>
+          </select>
+        </div>
+
+        <Transition name="fade">
+          <div v-if="intentResult" class="intent-result">
+            <div v-if="intentResult.top.length > 0" class="recommendation-group">
+              <span class="group-label">推荐时辰</span>
+              <div class="recommendation-chips">
+                <button
+                  v-for="h in intentResult.top"
+                  :key="h.hour"
+                  class="rec-chip success"
+                  @click="selectHour(h.hour)"
+                >
+                  <span class="rec-time">{{ h.hour }}:00 {{ getBranchForHour(h.hour) }}时</span>
+                  <span class="rec-score">{{ h.score }}分</span>
+                </button>
+              </div>
+            </div>
+
+            <div v-if="intentResult.caution.length > 0" class="recommendation-group">
+              <span class="group-label">避开时辰</span>
+              <div class="recommendation-chips">
+                <button
+                  v-for="h in intentResult.caution"
+                  :key="h.hour"
+                  class="rec-chip caution"
+                  @click="selectHour(h.hour)"
+                >
+                  <span class="rec-time">{{ h.hour }}:00 {{ getBranchForHour(h.hour) }}时</span>
+                </button>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-full" @click="addToPlan" :disabled="!selectedIntent">
+              <AppIcon name="plus" size="sm" />
+              加入今日计划
+            </button>
+          </div>
+        </Transition>
+      </BaseCard>
+
+      <!-- Term & Almanac Cards -->
+      <TermInfo class="term-card" />
+      <AlmanacCard class="almanac-card" />
+
+      <!-- Current Hour Detail -->
+      <BaseCard v-if="selectedHourData" class="current-hour-card bento-span-2" elevated>
+        <div class="current-header">
+          <div class="current-time">
+            <span class="time-main">{{ selectedHourData.rangeLabel }}</span>
+            <span class="time-branch">{{ getBranchForHour(appStore.selectedHour) }}时</span>
+          </div>
+          <div
+            class="current-suitability"
+            :class="energyStore.getEnergyLevel(selectedHourData.score)"
+          >
+            {{ getSuitabilityText(selectedHourData.score) }}
+          </div>
+        </div>
+
+        <div class="current-tags">
+          <span v-for="tag in selectedHourData.reasonTags" :key="tag" class="tag">
+            {{ tag }}
+          </span>
+        </div>
+
+        <div
+          v-if="
+            selectedHourData.recommendedActions?.length || selectedHourData.avoidActions?.length
+          "
+          class="current-actions"
         >
-          {{ getSuitabilityText(selectedHourData.score) }}
-        </span>
-      </div>
-      <div class="current-tags">
-        <span v-for="tag in selectedHourData.reasonTags" :key="tag" class="current-tag">{{
-          tag
-        }}</span>
-      </div>
-      <div
-        class="current-actions"
-        v-if="selectedHourData.recommendedActions?.length || selectedHourData.avoidActions?.length"
-      >
-        <div v-if="selectedHourData.recommendedActions?.length" class="current-action do">
-          <span class="action-label">建议：</span>
-          <span>{{ selectedHourData.recommendedActions.slice(0, 2).join('、') }}</span>
+          <div v-if="selectedHourData.recommendedActions?.length" class="action-row do">
+            <ElementIcon element="wood" size="sm" />
+            <span class="action-label">宜：</span>
+            <span class="action-list">{{
+              selectedHourData.recommendedActions.slice(0, 3).join('、')
+            }}</span>
+          </div>
+          <div v-if="selectedHourData.avoidActions?.length" class="action-row avoid">
+            <ElementIcon element="fire" size="sm" />
+            <span class="action-label">忌：</span>
+            <span class="action-list">{{
+              selectedHourData.avoidActions.slice(0, 2).join('、')
+            }}</span>
+          </div>
         </div>
-        <div v-if="selectedHourData.avoidActions?.length" class="current-action avoid">
-          <span class="action-label">避免：</span>
-          <span>{{ selectedHourData.avoidActions.slice(0, 2).join('、') }}</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- 24-hour chart with highlights -->
-    <div class="card timeline-card">
-      <EnergyChart
-        @hourSelected="onHourSelected"
-        :showShenSha="advancedMode && !isGuest"
-        :highlights="chartHighlights"
-        ref="energyChartRef"
-      />
+        <div class="current-element">
+          <span class="element-label">五行：</span>
+          <ElementIcon :element="getElementKey(selectedHourData.element)" size="sm" />
+          <span class="element-value">{{ selectedHourData.element }}旺</span>
+          <span class="element-hint">（{{ selectedHourData.elementHint }}）</span>
+        </div>
+      </BaseCard>
+
+      <!-- Energy Chart -->
+      <BaseCard class="chart-card bento-span-2" elevated>
+        <div class="chart-header">
+          <h3 class="chart-title">二十四时辰能量走势</h3>
+          <button v-if="!isGuest" class="btn btn-ghost btn-sm" @click="toggleAdvancedMode">
+            {{ advancedMode ? '简洁模式' : '专业模式' }}
+          </button>
+        </div>
+        <EnergyChart
+          @hourSelected="onHourSelected"
+          :showShenSha="advancedMode && !isGuest"
+          :highlights="chartHighlights"
+          ref="energyChartRef"
+        />
+      </BaseCard>
     </div>
 
     <!-- Toast Notification -->
-    <div v-if="toast.visible" class="toast">
-      {{ toast.message }}
-    </div>
+    <Transition name="toast">
+      <div v-if="toast.visible" class="toast">
+        <AppIcon name="check" size="sm" />
+        {{ toast.message }}
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useEnergyStore } from '@/stores/energy'
 import { useUserStore } from '@/stores/user'
 import { useAppStore } from '@/stores/app'
 import { useHourSelection } from '@/composables/useHourSelection'
+import { useBeijingTime } from '@/composables/useBeijingTime'
+import BaseCard from '@/components/common/BaseCard.vue'
 import EnergyChart from '@/components/EnergyChart.vue'
+import TermInfo from '@/components/TermInfo.vue'
+import AlmanacCard from '@/components/AlmanacCard.vue'
+import ElementIcon from '@/components/icons/ElementIcon.vue'
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const energyStore = useEnergyStore()
 const userStore = useUserStore()
 const appStore = useAppStore()
-const { selectedHour, selectedHourData, selectHour, currentBeijingHour } = useHourSelection()
+const { selectedHour, selectedHourData, selectHour } = useHourSelection()
+const { getBranchForHour } = useBeijingTime()
 const energyChartRef = ref(null)
 
 const dailyFortune = computed(() => energyStore.dailyFortune)
@@ -231,6 +264,18 @@ const intentResult = ref(null)
 const advancedMode = ref(false)
 const toast = ref({ visible: false, message: '' })
 
+const aspectNames = {
+  career: '事业',
+  wealth: '财富',
+  love: '情感',
+  health: '健康'
+}
+
+const currentDate = computed(() => {
+  const date = new Date()
+  return `${date.getMonth() + 1}月${date.getDate()}日`
+})
+
 // Highlights for chart when intent is selected
 const chartHighlights = computed(() => {
   if (!intentResult.value) return { top: [], caution: [] }
@@ -240,14 +285,30 @@ const chartHighlights = computed(() => {
   }
 })
 
-// Default to first intent if available to show state
-onMounted(() => {
-  if (actionLibrary.value.length > 0) {
-    // Optional: Pre-select something or leave empty
-    // selectedIntent.value = actionLibrary.value[0].id
-    // updateIntentRecommendation()
+function getLevel(score) {
+  if (score >= 80) return 'high'
+  if (score >= 60) return 'medium'
+  return 'low'
+}
+
+function getSuitabilityText(score) {
+  if (score >= 85) return '大吉'
+  if (score >= 70) return '吉'
+  if (score >= 50) return '平'
+  if (score >= 30) return '凶'
+  return '大凶'
+}
+
+function getElementKey(elementName) {
+  const map = {
+    金: 'metal',
+    木: 'wood',
+    水: 'water',
+    火: 'fire',
+    土: 'earth'
   }
-})
+  return map[elementName] || 'earth'
+}
 
 function updateIntentRecommendation() {
   if (!selectedIntent.value) {
@@ -256,34 +317,12 @@ function updateIntentRecommendation() {
   }
   intentResult.value = energyStore.getRecommendedHoursForAction(selectedIntent.value)
 
-  // Auto-select the first recommended hour so user sees guidance immediately
   if (intentResult.value?.top?.length > 0) {
     const firstRecommended = intentResult.value.top[0].hour
     selectHour(firstRecommended)
-
-    // Also scroll chart to that hour if method available
     if (energyChartRef.value?.scrollToHour) {
       energyChartRef.value.scrollToHour(firstRecommended)
     }
-  }
-}
-
-function getSuitabilityText(score) {
-  if (score >= 80) return '非常适合'
-  if (score >= 70) return '适合'
-  if (score >= 50) return '一般'
-  if (score >= 30) return '不宜'
-  return '尽量避开'
-}
-
-function scrollToHour(hour) {
-  // Select the hour so the chart shows its details
-  selectHour(hour)
-  console.log('Selected hour:', hour)
-
-  // Scroll the chart into view
-  if (energyChartRef.value?.$el) {
-    energyChartRef.value.$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 }
 
@@ -297,11 +336,10 @@ function toggleAdvancedMode() {
 
 function addToPlan() {
   if (!selectedIntent.value) return
-
   const action = actionLibrary.value.find((a) => a.id === selectedIntent.value)
   if (action) {
     userStore.addGoal(action.label)
-    showToast(`已添加 "${action.label}" 到今日计划`)
+    showToast(`已添加「${action.label}」到今日计划`)
   }
 }
 
@@ -315,484 +353,553 @@ function showToast(msg) {
 function goToProfile() {
   appStore.setActiveTab('profile')
 }
+
+onMounted(() => {
+  if (actionLibrary.value.length > 0) {
+    // Optional pre-selection
+  }
+})
 </script>
 
 <style scoped>
 .today-tab {
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
 }
 
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 24px 0 12px;
-  color: var(--header-text);
+/* Guest Banner */
+.guest-banner {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: rgba(232, 196, 102, 0.1);
+  border: 1px dashed var(--metal);
+  border-radius: var(--radius-lg);
+}
+
+.guest-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-
-.toggle-mode-btn {
-  font-size: 0.8rem;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  background: none;
-  border: 1px solid var(--border-color);
-  padding: 4px 10px;
-  border-radius: 12px;
-  cursor: pointer;
 }
 
-.card {
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: var(--card-shadow);
-  margin-bottom: 16px;
+.btn-sm {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
 }
 
-/* Fortune Card Styles */
+.btn-full {
+  width: 100%;
+  margin-top: var(--space-4);
+}
+
+/* Bento Grid */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+}
+
+.bento-span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .bento-span-2 {
+    grid-column: span 1;
+  }
+}
+
+/* Fortune Card */
 .fortune-card {
-  background: linear-gradient(145deg, var(--card-bg) 0%, rgba(var(--accent-rgb), 0.05) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(232, 196, 102, 0.05) 100%);
+}
+
+.fortune-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .fortune-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
 }
 
-.lunar-text {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.fortune-score-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.score-circle {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
+.date-display {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: var(--bg-secondary);
-  border: 3px solid currentColor;
+  gap: var(--space-1);
 }
 
-.fortune-score-container.good {
-  color: var(--success-color);
-}
-.fortune-score-container.caution {
-  color: var(--warning-color);
-}
-.fortune-score-container.ok {
+.lunar-date {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
   color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+.solar-date {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.fortune-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  border: 2px solid;
+}
+
+.fortune-badge.good {
+  border-color: var(--wood);
+  color: var(--wood);
+}
+
+.fortune-badge.caution {
+  border-color: var(--fire);
+  color: var(--fire);
+}
+
+.fortune-badge.ok {
+  border-color: var(--metal);
+  color: var(--metal);
 }
 
 .score-value {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
   line-height: 1;
 }
 
 .score-label {
-  font-size: 0.6rem;
+  font-size: var(--text-xs);
+  margin-top: var(--space-1);
   opacity: 0.8;
 }
 
-.score-text {
-  font-size: 1.5rem;
-  font-weight: 700;
+.fortune-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .fortune-quote {
-  font-style: italic;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
   color: var(--text-secondary);
   text-align: center;
-  margin-bottom: 24px;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
+  line-height: var(--leading-relaxed);
+  margin: 0;
 }
 
+/* Aspect Bars */
 .aspects-grid {
   display: grid;
-  gap: 12px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
 }
 
 .aspect-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 40px 1fr 48px;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
-.aspect-label {
-  width: 40px;
-  font-size: 0.9rem;
+.aspect-name {
+  font-size: var(--text-sm);
   color: var(--text-secondary);
 }
 
-.aspect-bar-container {
-  flex: 1;
-  height: 8px;
-  background: var(--bg-secondary);
-  border-radius: 4px;
+.aspect-bar-bg {
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
 .aspect-bar {
   height: 100%;
-  background: var(--accent-color);
-  border-radius: 4px;
-  transition: width 0.5s ease-out;
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
 }
 
-.aspect-value {
-  width: 60px;
-  text-align: right;
-  font-size: 0.85rem;
+.aspect-bar.level-high {
+  background: var(--wood);
+}
+.aspect-bar.level-medium {
+  background: var(--metal);
+}
+.aspect-bar.level-low {
+  background: var(--text-muted);
+}
+
+.aspect-score {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--text-primary);
-  font-weight: 500;
+  text-align: right;
 }
 
-.tags-container {
+/* Tags */
+.fortune-tags {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   justify-content: center;
 }
 
-.fortune-tag {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
+/* Quick Actions */
+.quick-actions-card {
+  grid-row: span 2;
 }
 
-/* Quick Actions Styles */
-.quick-action-group {
-  margin-bottom: 12px;
+.action-section {
+  margin-bottom: var(--space-4);
 }
 
-.quick-action-group:last-child {
+.action-section:last-child {
   margin-bottom: 0;
 }
 
-.group-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 10px;
+.action-header {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-3);
 }
 
-.group-label.success {
-  color: var(--success-color);
+.action-header.success {
+  color: var(--wood);
 }
-.group-label.caution {
-  color: var(--danger-color);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+.action-header.caution {
+  color: var(--fire);
 }
 
-.time-btn {
-  flex: 1;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
+.time-chips {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+}
+
+.time-chip {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  min-width: 80px;
-  transition: transform 0.1s;
+  transition: all var(--transition-fast);
+  background: transparent;
 }
 
-.time-btn:active {
-  transform: scale(0.98);
+.time-chip.success {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
 }
 
-.time-btn.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-color);
+.time-chip.success:hover {
+  background: rgba(74, 222, 128, 0.2);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
 }
 
-.time-btn.caution {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger-color);
+.time-chip.caution {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
 }
 
-.time-range {
-  font-weight: 700;
-  font-size: 1rem;
+.time-chip.caution:hover {
+  background: rgba(248, 113, 113, 0.2);
 }
 
-.time-tag {
-  font-size: 0.7rem;
-  opacity: 0.9;
-}
-
-.divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 16px 0;
-}
-
-/* Intent Card Styles */
-.intent-selector select {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+.chip-time {
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
-  font-size: 1rem;
-  margin-bottom: 16px;
+}
+
+.chip-branch {
+  font-size: var(--text-xs);
+  color: var(--metal);
+  padding: 2px 6px;
+  background: rgba(232, 196, 102, 0.15);
+  border-radius: var(--radius-sm);
+}
+
+.chip-tag {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* Intent Card */
+.intent-card {
+  grid-row: span 2;
+}
+
+.intent-selector {
+  margin-bottom: var(--space-4);
 }
 
 .intent-result {
-  animation: fadeIn 0.3s ease;
-}
-
-.recommendation-list {
-  margin-bottom: 12px;
-}
-
-.rec-title {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-
-.rec-items {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-.rec-item {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.9rem;
+.recommendation-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.group-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recommendation-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.rec-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--text-sm);
 }
 
-.rec-item.success {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-color);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+.rec-chip.success {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--wood);
 }
 
-.rec-item.caution {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger-color);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+.rec-chip.success:hover {
+  background: rgba(74, 222, 128, 0.25);
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+}
+
+.rec-chip.caution {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--fire);
+}
+
+.rec-chip.caution:hover {
+  background: rgba(248, 113, 113, 0.25);
 }
 
 .rec-score {
-  font-weight: 600;
-  font-size: 0.8rem;
+  font-weight: var(--font-bold);
+  font-size: var(--text-xs);
 }
 
-.add-plan-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  margin-top: 12px;
-  cursor: pointer;
-}
-
-.add-plan-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Toast */
-.toast {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  z-index: 100;
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translate(-50%, 20px);
-    opacity: 0;
-  }
-  to {
-    transform: translate(-50%, 0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Guest Mode Styles */
-.guest-cta-block {
-  margin-bottom: 20px;
-  padding: 12px;
-  background: rgba(var(--accent-rgb), 0.1);
-  border: 1px dashed var(--accent-color);
-  border-radius: 12px;
-}
-
-.guest-cta-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.guest-cta-title {
-  font-size: 0.9rem;
-  color: var(--accent-color);
-  font-weight: 600;
-}
-
-.guest-cta-btn {
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.guest-cta-btn:hover {
-  background: var(--accent-hover);
-}
-
-.guest-badge {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-left: 8px;
-  border: 1px solid var(--border-color);
-}
-
-/* Current Hour Summary Card */
+/* Current Hour Card */
 .current-hour-card {
-  background: var(--bg-secondary);
-  border-left: 4px solid var(--accent-color);
-  padding: 16px;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(96, 165, 250, 0.05) 100%);
+  border-left: 4px solid var(--water);
 }
 
-.current-hour-header {
+.current-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-4);
 }
 
 .current-time {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--header-text);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.time-main {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.time-branch {
+  font-size: var(--text-lg);
+  color: var(--metal);
+  font-weight: var(--font-medium);
 }
 
 .current-suitability {
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 0.9rem;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-sm);
 }
+
 .current-suitability.high {
-  color: var(--success-color);
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--wood);
 }
+
 .current-suitability.medium {
-  color: var(--accent-color);
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(232, 196, 102, 0.15);
+  color: var(--metal);
 }
+
 .current-suitability.low {
+  background: var(--bg-elevated);
   color: var(--text-secondary);
-  background: var(--bg-primary);
 }
 
 .current-tags {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.current-tag {
-  background: var(--card-bg);
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
 }
 
 .current-actions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.9rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
-.current-action {
+.action-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
 }
 
-.current-action .action-label {
-  font-weight: 600;
-  margin-right: 6px;
-  flex-shrink: 0;
+.action-row.do {
+  color: var(--wood);
+}
+.action-row.avoid {
+  color: var(--fire);
 }
 
-.current-action.do {
-  color: var(--success-color);
+.action-label {
+  font-weight: var(--font-semibold);
 }
 
-.current-action.avoid {
-  color: var(--danger-color);
+.action-list {
+  color: var(--text-primary);
+}
+
+.current-element {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.element-value {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.element-hint {
+  color: var(--text-tertiary);
+}
+
+/* Chart Card */
+.chart-card {
+  background: var(--bg-secondary);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.chart-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--wood);
+  color: var(--ink-black);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  z-index: 100;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-base);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all var(--transition-spring);
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .fortune-card {
+    grid-column: span 1;
+  }
+
+  .aspects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions-card,
+  .intent-card {
+    grid-row: span 1;
+  }
 }
 </style>

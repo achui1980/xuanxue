@@ -2,8 +2,7 @@
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useEnergyStore } from '@/stores/energy'
-
-const emit = defineEmits(['close'])
+import AppIcon from '@/components/icons/AppIcon.vue'
 
 const userStore = useUserStore()
 const energyStore = useEnergyStore()
@@ -16,10 +15,9 @@ const customActivities = computed(() => {
 })
 
 const defaultActivities = computed(() => {
-  // Filter out custom ones from the full library to show what's default
   const library = energyStore.actionLibrary
-  const customIds = customActivities.value.map(a => a.id)
-  return library.filter(a => !customIds.includes(a.id))
+  const customIds = customActivities.value.map((a) => a.id)
+  return library.filter((a) => !customIds.includes(a.id))
 })
 
 function handleAdd() {
@@ -27,11 +25,10 @@ function handleAdd() {
     errorMessage.value = '请输入活动名称'
     return
   }
-  
+
   const label = newActivityLabel.value.trim()
-  
-  // Check for duplicates in full library
-  const exists = energyStore.actionLibrary.some(a => a.label === label)
+
+  const exists = energyStore.actionLibrary.some((a) => a.label === label)
   if (exists) {
     errorMessage.value = '该活动已存在'
     return
@@ -55,7 +52,9 @@ function handleDelete(id) {
     <div class="activity-manager-modal">
       <div class="modal-header">
         <h3>管理活动库</h3>
-        <button class="close-btn" @click="$emit('close')">×</button>
+        <button class="close-btn" @click="$emit('close')">
+          <AppIcon name="close" size="md" />
+        </button>
       </div>
 
       <div class="modal-body">
@@ -63,13 +62,16 @@ function handleDelete(id) {
         <div class="add-section">
           <h4>添加自定义活动</h4>
           <div class="input-group">
-            <input 
-              v-model="newActivityLabel" 
-              type="text" 
+            <input
+              v-model="newActivityLabel"
+              type="text"
               placeholder="例如：写代码、弹吉他..."
               @keyup.enter="handleAdd"
             />
-            <button class="add-btn" @click="handleAdd">添加</button>
+            <button class="add-btn" @click="handleAdd">
+              <AppIcon name="plus" size="sm" />
+              添加
+            </button>
           </div>
           <p v-if="errorMessage" class="error-msg">{{ errorMessage }}</p>
         </div>
@@ -77,13 +79,13 @@ function handleDelete(id) {
         <!-- Custom Activities List -->
         <div class="list-section">
           <h4>自定义活动</h4>
-          <div v-if="customActivities.length === 0" class="empty-state">
-            暂无自定义活动
-          </div>
+          <div v-if="customActivities.length === 0" class="empty-state">暂无自定义活动</div>
           <ul v-else class="activity-list">
             <li v-for="activity in customActivities" :key="activity.id" class="activity-item">
               <span class="activity-label">{{ activity.label }}</span>
-              <button class="delete-btn" @click="handleDelete(activity.id)">删除</button>
+              <button class="delete-btn" @click="handleDelete(activity.id)">
+                <AppIcon name="close" size="sm" />
+              </button>
             </li>
           </ul>
         </div>
@@ -110,29 +112,30 @@ function handleDelete(id) {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
 }
 
 .activity-manager-modal {
-  background: white;
+  background: var(--bg-secondary);
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--border-subtle);
 }
 
 .modal-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -140,129 +143,175 @@ function handleDelete(id) {
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.1rem;
-  color: #1e293b;
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  font-family: var(--font-display);
 }
 
 .close-btn {
   background: none;
   border: none;
-  font-size: 24px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   cursor: pointer;
-  padding: 0;
+  padding: var(--space-1);
   line-height: 1;
+  transition: color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: var(--fire);
 }
 
 .modal-body {
-  padding: 20px;
+  padding: var(--space-5);
   overflow-y: auto;
 }
 
 .add-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
-.add-section h4, .list-section h4 {
-  margin: 0 0 12px 0;
-  font-size: 0.95rem;
-  color: #475569;
+.add-section h4,
+.list-section h4 {
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .input-group {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .input-group input {
   flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  padding: var(--space-3);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  transition: border-color var(--transition-fast);
 }
 
 .input-group input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--water);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
 }
 
 .add-btn {
-  padding: 8px 16px;
-  background: #3b82f6;
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--water);
+  color: var(--ink-black);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: 500;
+  font-weight: var(--font-semibold);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .add-btn:hover {
-  background: #2563eb;
+  background: var(--water-dim);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-glow);
 }
 
 .error-msg {
-  color: #ef4444;
-  font-size: 0.85rem;
-  margin: 6px 0 0 0;
+  color: var(--fire);
+  font-size: var(--text-sm);
+  margin: var(--space-2) 0 0 0;
 }
 
 .list-section {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .activity-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
 }
 
 .activity-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition-fast);
 }
 
 .activity-item:last-child {
   border-bottom: none;
 }
 
+.activity-item:hover {
+  background: var(--bg-elevated);
+}
+
 .activity-label {
-  color: #334155;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
 }
 
 .delete-btn {
-  padding: 4px 8px;
-  background: #fee2e2;
-  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--fire);
   border: none;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .delete-btn:hover {
-  background: #fecaca;
+  background: rgba(248, 113, 113, 0.2);
+  transform: scale(1.05);
 }
 
 .tag {
-  font-size: 0.75rem;
-  background: #f1f5f9;
-  color: #64748b;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-size: var(--text-xs);
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
 }
 
 .empty-state {
   text-align: center;
-  color: #94a3b8;
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  color: var(--text-tertiary);
+  padding: var(--space-6);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 480px) {
+  .input-group {
+    flex-direction: column;
+  }
+
+  .add-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
