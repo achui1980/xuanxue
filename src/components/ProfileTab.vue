@@ -1,280 +1,161 @@
 <template>
   <div class="profile-tab">
-    <!-- Header -->
-    <div class="profile-header">
-      <h2 class="profile-title">个人中心</h2>
-      <p class="profile-subtitle">完善信息，获取个性化运势指引</p>
-    </div>
-
-    <!-- Bento Grid Layout -->
-    <div class="profile-grid">
-      <!-- Personality Card -->
-      <PersonalityCard class="grid-span-2" />
-
-      <!-- Energy Clock -->
-      <EnergyClock />
-
-      <!-- Birth Info Card -->
-      <BaseCard class="birth-card grid-span-2" elevated>
-        <template #header>
-          <div class="card-header-row">
-            <h3 class="card-title">出生信息</h3>
-            <button class="btn btn-ghost btn-sm" @click="toggleBirthSection">
-              <AppIcon :name="birthExpanded ? 'chevron-up' : 'chevron-down'" size="sm" />
-            </button>
+    <!-- 第1层：Hero 区域 - 人格画像 + 能量时钟 -->
+    <BaseCard v-if="hasBirthInfo" class="profile-hero" elevated>
+      <div class="hero-content">
+        <div class="hero-main">
+          <div class="hero-avatar" :class="`wuxing-${dominantElement}`">
+            <ElementIcon :element="dominantElement" size="xl" />
           </div>
-        </template>
-
-        <Transition name="collapse">
-          <div v-show="birthExpanded">
-            <!-- Birth Form -->
-            <div v-if="!userStore.hasBirthInfo()" class="birth-form">
-              <p class="form-intro">
-                <AppIcon name="info" size="sm" />
-                请输入出生信息，用于生成八字与五行分析
-              </p>
-
-              <div class="form-grid">
-                <div class="form-field">
-                  <label>出生年份</label>
-                  <input
-                    type="number"
-                    v-model.number="birthForm.year"
-                    class="input"
-                    placeholder="例如: 1990"
-                    min="1900"
-                    max="2100"
-                  />
-                </div>
-
-                <div class="form-field">
-                  <label>出生月份</label>
-                  <select v-model.number="birthForm.month" class="input select">
-                    <option :value="null" disabled>选择</option>
-                    <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>出生日期</label>
-                  <select v-model.number="birthForm.day" class="input select">
-                    <option :value="null" disabled>选择</option>
-                    <option v-for="d in 31" :key="d" :value="d">{{ d }}日</option>
-                  </select>
-                </div>
-
-                <div class="form-field">
-                  <label>出生时辰</label>
-                  <select v-model.number="birthForm.hour" class="input select">
-                    <option :value="null" disabled>选择</option>
-                    <option v-for="h in 24" :key="h - 1" :value="h - 1">
-                      {{ h - 1 }}时 {{ getBranchForHour(h - 1) }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-actions">
-                <button class="btn btn-primary" @click="handleCalculate" :disabled="!isFormValid">
-                  <AppIcon name="check" size="sm" />
-                  计算八字
-                </button>
-                <button class="btn btn-secondary" @click="goToToday">先看通用指引</button>
-              </div>
-
-              <Transition name="fade">
-                <div v-if="errorMessage" class="error-alert">
-                  <AppIcon name="warning" size="sm" />
-                  {{ errorMessage }}
-                </div>
-              </Transition>
-            </div>
-
-            <!-- Birth Display -->
-            <div v-else class="birth-display">
-              <div class="birth-summary">
-                <div class="summary-item">
-                  <span class="summary-label">阳历</span>
-                  <span class="summary-value">
-                    {{ profile.birthYear }}年{{ profile.birthMonth }}月{{ profile.birthDay }}日
-                  </span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-label">时辰</span>
-                  <span class="summary-value">
-                    {{ profile.birthHour }}时 ({{ getBranchForHour(profile.birthHour) }}时)
-                  </span>
-                </div>
-              </div>
-
-              <div class="bazi-display">
-                <div class="bazi-pillar">
-                  <span class="pillar-label">年柱</span>
-                  <span class="pillar-value">{{ profile.bazi?.year?.full || '--' }}</span>
-                </div>
-                <div class="bazi-pillar">
-                  <span class="pillar-label">月柱</span>
-                  <span class="pillar-value">{{ profile.bazi?.month?.full || '--' }}</span>
-                </div>
-                <div class="bazi-pillar">
-                  <span class="pillar-label">日柱</span>
-                  <span class="pillar-value">{{ profile.bazi?.day?.full || '--' }}</span>
-                </div>
-                <div class="bazi-pillar">
-                  <span class="pillar-label">时柱</span>
-                  <span class="pillar-value">{{ profile.bazi?.hour?.full || '--' }}</span>
-                </div>
-              </div>
-
-              <div class="action-row">
-                <button class="btn btn-secondary" @click="handleClear">重新输入</button>
-              </div>
+          <div class="hero-info">
+            <h2 class="hero-title">{{ personalityName }}</h2>
+            <p class="hero-description">{{ personalityDescription }}</p>
+            <div class="hero-tags">
+              <span v-for="tag in personalityTags.slice(0, 3)" :key="tag" class="tag">
+                {{ tag }}
+              </span>
             </div>
           </div>
-        </Transition>
-      </BaseCard>
-
-      <!-- Advanced Info Card -->
-      <BaseCard v-if="userStore.hasBirthInfo()" class="advanced-card grid-span-2" elevated>
-        <template #header>
-          <div class="card-header-row">
-            <h3 class="card-title">详细分析</h3>
-            <button class="btn btn-ghost btn-sm" @click="toggleAdvancedSection">
-              <AppIcon :name="advancedExpanded ? 'chevron-up' : 'chevron-down'" size="sm" />
-            </button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item">
+            <span class="stat-label">主导五行</span>
+            <span class="stat-value" :class="`text-${dominantElement}`">{{
+              getWuxingName(dominantElement)
+            }}</span>
           </div>
-        </template>
-
-        <Transition name="collapse">
-          <div v-show="advancedExpanded" class="advanced-content">
-            <!-- Day Master -->
-            <div class="analysis-section">
-              <div class="section-label">日主</div>
-              <div class="day-master-badge">
-                {{ profile.dayMaster || '未知' }}
-              </div>
-            </div>
-
-            <!-- Five Elements -->
-            <div class="analysis-section">
-              <div class="section-label">五行强度</div>
-              <div class="wuxing-grid">
-                <div v-for="(value, key) in profile.wuxing" :key="key" class="wuxing-item">
-                  <ElementIcon :element="key" size="sm" />
-                  <span class="wuxing-name">{{ getWuxingName(key) }}</span>
-                  <div class="wuxing-bar">
-                    <div class="wuxing-progress" :style="{ width: `${value}%` }" />
-                  </div>
-                  <span class="wuxing-value">{{ value }}%</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Favorable -->
-            <div class="analysis-section favorable-section">
-              <div class="favorable-row">
-                <span class="favorable-label good">喜用神</span>
-                <span class="favorable-value">{{ profile.favorable?.join('、') || '未计算' }}</span>
-              </div>
-              <div class="favorable-row">
-                <span class="favorable-label bad">忌神</span>
-                <span class="favorable-value">{{
-                  profile.unfavorable?.join('、') || '未计算'
-                }}</span>
-              </div>
-            </div>
+          <div class="stat-item">
+            <span class="stat-label">最佳时段</span>
+            <span class="stat-value">{{ bestTimeOfDay }}</span>
           </div>
-        </Transition>
-      </BaseCard>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-edit" @click="showEditModal = true">
+        <AppIcon name="settings" size="sm" />
+        编辑信息
+      </button>
+    </BaseCard>
 
-      <!-- Personalized Rules -->
-      <PersonalizedRules class="grid-span-2" />
+    <!-- 第2层：出生信息 + 八字展示 -->
+    <BirthInfoDisplay v-if="hasBirthInfo" class="profile-section" @edit="showEditModal = true" />
 
-      <!-- Settings Cards -->
-      <BaseCard class="settings-card" title="智能提醒" elevated>
-        <div v-if="!isSupported" class="warning-text">您的浏览器不支持通知功能</div>
-        <div v-else class="setting-item">
-          <div class="setting-info">
-            <span class="setting-title">浏览器通知</span>
-            <span class="setting-desc">吉时提醒与冲煞预警</span>
-          </div>
-          <label class="toggle">
+    <!-- 未填写时显示表单 -->
+    <BaseCard v-else class="profile-section" elevated>
+      <template #header>
+        <h3 class="card-title">完善出生信息</h3>
+        <p class="card-subtitle">输入出生信息，获取个性化运势指引</p>
+      </template>
+      <BirthInfoForm @success="onBirthInfoSaved" />
+    </BaseCard>
+
+    <!-- 第3层：个性化实验室 -->
+    <PersonalizedRules v-if="hasBirthInfo" class="profile-section" />
+
+    <!-- 第4层：设置区 - 2x2 紧凑网格 -->
+    <div class="settings-grid">
+      <BaseCard class="setting-item" elevated>
+        <div class="setting-icon">
+          <AppIcon name="bell" size="lg" />
+        </div>
+        <div class="setting-content">
+          <h4 class="setting-title">智能提醒</h4>
+          <p class="setting-desc">吉时提醒与冲煞预警</p>
+          <label class="toggle" v-if="isSupported">
             <input type="checkbox" v-model="isNotificationEnabled" />
             <span class="toggle-slider"></span>
           </label>
+          <span v-else class="setting-warning">不支持</span>
         </div>
       </BaseCard>
 
-      <BaseCard class="settings-card" title="数据管理" elevated>
-        <div class="data-actions">
-          <button class="btn btn-secondary btn-sm" @click="handleExport">
-            <AppIcon name="arrow-right" size="sm" />
-            导出
-          </button>
-          <button class="btn btn-secondary btn-sm" @click="triggerImport">
-            <AppIcon name="arrow-left" size="sm" />
-            导入
-          </button>
+      <BaseCard class="setting-item" elevated>
+        <div class="setting-icon">
+          <AppIcon name="database" size="lg" />
+        </div>
+        <div class="setting-content">
+          <h4 class="setting-title">数据管理</h4>
+          <p class="setting-desc">导出或导入个人数据</p>
+          <div class="setting-actions">
+            <button class="btn btn-secondary btn-sm" @click="handleExport">导出</button>
+            <button class="btn btn-secondary btn-sm" @click="triggerImport">导入</button>
+          </div>
           <input type="file" ref="fileInput" accept=".json" class="hidden" @change="handleImport" />
         </div>
       </BaseCard>
 
-      <!-- Privacy Note -->
-      <div class="privacy-card grid-span-2">
-        <div class="privacy-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
+      <BaseCard class="setting-item" elevated>
+        <div class="setting-icon privacy">
+          <AppIcon name="shield" size="lg" />
         </div>
-        <div class="privacy-content">
-          <span class="privacy-title">隐私保护</span>
-          <span class="privacy-text">所有数据仅存储在浏览器本地，不会上传到服务器</span>
+        <div class="setting-content">
+          <h4 class="setting-title">隐私保护</h4>
+          <p class="setting-desc">数据仅存储在本地</p>
+        </div>
+      </BaseCard>
+
+      <BaseCard class="setting-item" elevated>
+        <div class="setting-icon info">
+          <AppIcon name="info" size="lg" />
+        </div>
+        <div class="setting-content">
+          <h4 class="setting-title">关于</h4>
+          <p class="setting-desc">时机 v1.0.0</p>
+        </div>
+      </BaseCard>
+    </div>
+
+    <!-- 编辑模态框 -->
+    <Teleport to="body">
+      <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>编辑个人信息</h3>
+            <button class="btn btn-ghost" @click="showEditModal = false">
+              <AppIcon name="close" size="md" />
+            </button>
+          </div>
+          <BirthInfoForm :initial-data="profile" @success="onEditSuccess" />
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { useAppStore } from '@/stores/app'
 import { useNotifications } from '@/composables/useNotifications'
-import { useBeijingTime } from '@/composables/useBeijingTime'
 import { useToast } from 'vue-toastification'
+import { usePersonality } from '@/composables/usePersonality'
 import BaseCard from '@/components/common/BaseCard.vue'
 import ElementIcon from '@/components/icons/ElementIcon.vue'
 import AppIcon from '@/components/icons/AppIcon.vue'
-import PersonalityCard from '@/components/PersonalityCard.vue'
-import EnergyClock from '@/components/EnergyClock.vue'
+import BirthInfoDisplay from '@/components/BirthInfoDisplay.vue'
+import BirthInfoForm from '@/components/BirthInfoForm.vue'
 import PersonalizedRules from '@/components/PersonalizedRules.vue'
 
 const userStore = useUserStore()
-const appStore = useAppStore()
 const { requestPermission, isSupported } = useNotifications()
-const { getBranchForHour } = useBeijingTime()
 const toast = useToast()
 const fileInput = ref(null)
+const showEditModal = ref(false)
+
+const {
+  hasBirthInfo,
+  dominantElement,
+  personalityName,
+  personalityDescription,
+  personalityTags,
+  bestTimeOfDay
+} = usePersonality()
+
+function getWuxingName(key) {
+  const map = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' }
+  return map[key] || key
+}
 
 const profile = computed(() => userStore.profile)
 
-// Section states
-const birthExpanded = ref(!userStore.hasBirthInfo())
-const advancedExpanded = ref(false)
-
-function toggleBirthSection() {
-  birthExpanded.value = !birthExpanded.value
-}
-
-function toggleAdvancedSection() {
-  advancedExpanded.value = !advancedExpanded.value
-}
-
-function goToToday() {
-  appStore.setActiveTab('today')
-}
-
-// Notification toggle
 const isNotificationEnabled = computed({
   get: () => userStore.profile.enableNotifications,
   set: async (value) => {
@@ -293,63 +174,15 @@ const isNotificationEnabled = computed({
   }
 })
 
-// Birth form
-const birthForm = ref({
-  year: null,
-  month: null,
-  day: null,
-  hour: null
-})
-
-const errorMessage = ref('')
-
-const isFormValid = computed(() => {
-  return (
-    birthForm.value.year &&
-    birthForm.value.month &&
-    birthForm.value.day &&
-    birthForm.value.hour !== null
-  )
-})
-
-function handleCalculate() {
-  errorMessage.value = ''
-
-  if (!isFormValid.value) {
-    errorMessage.value = '请填写完整的出生信息'
-    return
-  }
-
-  const success = userStore.setBirthInfo(
-    birthForm.value.year,
-    birthForm.value.month,
-    birthForm.value.day,
-    birthForm.value.hour
-  )
-
-  if (success) {
-    toast.success('八字计算成功')
-    birthExpanded.value = false
-  } else {
-    errorMessage.value = '计算失败，请检查输入日期是否有效'
-    toast.error('计算失败')
-  }
+function onBirthInfoSaved() {
+  toast.success('出生信息已保存')
 }
 
-function handleClear() {
-  if (confirm('确定要清除出生信息吗？')) {
-    userStore.clearBirthInfo()
-    birthForm.value = { year: null, month: null, day: null, hour: null }
-    birthExpanded.value = true
-  }
+function onEditSuccess() {
+  showEditModal.value = false
+  toast.success('个人信息已更新')
 }
 
-function getWuxingName(key) {
-  const map = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' }
-  return map[key] || key
-}
-
-// Data export/import
 function handleExport() {
   const data = userStore.exportData()
   if (!data) {
@@ -384,14 +217,6 @@ function handleImport(event) {
 
     if (result.success) {
       toast.success('数据导入成功')
-      if (profile.value.birthYear) {
-        birthForm.value = {
-          year: profile.value.birthYear,
-          month: profile.value.birthMonth,
-          day: profile.value.birthDay,
-          hour: profile.value.birthHour
-        }
-      }
     } else {
       toast.error('导入失败: ' + result.error)
     }
@@ -404,13 +229,74 @@ function handleImport(event) {
 <style scoped>
 .profile-tab {
   width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.profile-header {
+.profile-section {
   margin-bottom: var(--space-6);
 }
 
-.profile-title {
+/* Hero Section */
+.profile-hero {
+  position: relative;
+  overflow: visible;
+}
+
+.hero-content {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.hero-main {
+  display: flex;
+  gap: var(--space-5);
+}
+
+.hero-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 4px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.hero-avatar.wuxing-wood {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: var(--wood);
+}
+
+.hero-avatar.wuxing-fire {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: var(--fire);
+}
+
+.hero-avatar.wuxing-earth {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: var(--earth);
+}
+
+.hero-avatar.wuxing-metal {
+  background: rgba(232, 196, 102, 0.15);
+  border-color: var(--metal);
+}
+
+.hero-avatar.wuxing-water {
+  background: rgba(96, 165, 250, 0.1);
+  border-color: var(--water);
+}
+
+.hero-info {
+  flex: 1;
+}
+
+.hero-title {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
@@ -418,341 +304,129 @@ function handleImport(event) {
   margin: 0 0 var(--space-2);
 }
 
-.profile-subtitle {
-  font-size: var(--text-base);
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-/* Grid Layout */
-.profile-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-5);
-}
-
-.grid-span-2 {
-  grid-column: span 2;
-}
-
-@media (max-width: 768px) {
-  .profile-grid {
-    grid-template-columns: 1fr;
-  }
-  .grid-span-2 {
-    grid-column: span 1;
-  }
-}
-
-/* Card Header */
-.card-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.card-title {
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin: 0;
-}
-
-/* Birth Form */
-.form-intro {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background: rgba(96, 165, 250, 0.1);
-  border-radius: var(--radius-md);
+.hero-description {
   font-size: var(--text-sm);
-  color: var(--water);
-  margin-bottom: var(--space-5);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-3);
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
+.hero-tags {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
-@media (max-width: 1024px) {
-  .form-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.form-field {
+.hero-stats {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-}
-
-.form-field label {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--text-secondary);
-}
-
-.form-actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-@media (max-width: 480px) {
-  .form-actions {
-    flex-direction: column;
-  }
-}
-
-.error-alert {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
-  padding: var(--space-3);
-  background: rgba(248, 113, 113, 0.1);
-  border: 1px solid rgba(248, 113, 113, 0.3);
-  border-radius: var(--radius-md);
-  color: var(--fire);
-  font-size: var(--text-sm);
-}
-
-/* Birth Display */
-.birth-display {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.birth-summary {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-4);
+  min-width: 200px;
   padding: var(--space-4);
   background: var(--bg-elevated);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
 }
 
-@media (max-width: 480px) {
-  .birth-summary {
-    grid-template-columns: 1fr;
-  }
-}
-
-.summary-item {
+.stat-item {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
 }
 
-.summary-label {
+.stat-label {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.summary-value {
+.stat-value {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
   color: var(--text-primary);
 }
 
-.bazi-display {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
-}
-
-@media (max-width: 640px) {
-  .bazi-display {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.bazi-pillar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  background: var(--bg-elevated);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-}
-
-.pillar-label {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
-.pillar-value {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  color: var(--metal);
-}
-
-.action-row {
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Advanced Card */
-.advanced-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  margin-top: var(--space-4);
-}
-
-.analysis-section {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.analysis-section:first-child {
-  padding-top: 0;
-  border-top: none;
-}
-
-.section-label {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: var(--space-3);
-}
-
-.day-master-badge {
-  display: inline-flex;
-  padding: var(--space-3) var(--space-6);
-  background: linear-gradient(135deg, var(--metal) 0%, var(--metal-dim) 100%);
-  color: var(--ink-black);
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-bold);
-  border-radius: var(--radius-lg);
-}
-
-/* Five Elements Grid */
-.wuxing-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.wuxing-item {
-  display: grid;
-  grid-template-columns: 24px 40px 1fr 48px;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.wuxing-name {
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--text-secondary);
-}
-
-.wuxing-bar {
-  height: 8px;
-  background: var(--bg-elevated);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.wuxing-progress {
-  height: 100%;
-  background: linear-gradient(90deg, var(--metal) 0%, var(--metal-dim) 100%);
-  border-radius: var(--radius-full);
-  transition: width 0.5s ease;
-}
-
-.wuxing-value {
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  text-align: right;
-}
-
-/* Favorable Section */
-.favorable-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.favorable-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.favorable-label {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: var(--font-bold);
-}
-
-.favorable-label.good {
-  background: rgba(74, 222, 128, 0.15);
+.text-wood {
   color: var(--wood);
 }
-
-.favorable-label.bad {
-  background: rgba(248, 113, 113, 0.15);
+.text-fire {
   color: var(--fire);
 }
-
-.favorable-value {
-  font-size: var(--text-base);
-  color: var(--text-primary);
+.text-earth {
+  color: var(--earth);
+}
+.text-metal {
+  color: var(--metal);
+}
+.text-water {
+  color: var(--water);
 }
 
-/* Settings */
-.settings-card .warning-text {
-  padding: var(--space-3);
-  background: rgba(248, 113, 113, 0.1);
-  color: var(--fire);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  text-align: center;
+.btn-edit {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+}
+
+/* Settings Grid */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
 }
 
 .setting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.setting-info {
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  align-items: center;
+  text-align: center;
+}
+
+.setting-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(96, 165, 250, 0.1);
+  color: var(--water);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-3);
+}
+
+.setting-icon.privacy {
+  background: rgba(74, 222, 128, 0.1);
+  color: var(--wood);
+}
+
+.setting-icon.info {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-secondary);
 }
 
 .setting-title {
-  font-weight: var(--font-medium);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
+  margin: 0 0 var(--space-1);
 }
 
 .setting-desc {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-3);
+}
+
+.setting-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.setting-warning {
+  font-size: var(--text-xs);
   color: var(--text-tertiary);
 }
 
@@ -760,8 +434,8 @@ function handleImport(event) {
 .toggle {
   position: relative;
   display: inline-block;
-  width: 48px;
-  height: 26px;
+  width: 44px;
+  height: 24px;
 }
 
 .toggle input {
@@ -785,8 +459,8 @@ function handleImport(event) {
 .toggle-slider:before {
   position: absolute;
   content: '';
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
   left: 3px;
   bottom: 3px;
   background-color: var(--text-primary);
@@ -799,84 +473,89 @@ function handleImport(event) {
 }
 
 .toggle input:checked + .toggle-slider:before {
-  transform: translateX(22px);
+  transform: translateX(20px);
 }
 
-/* Data Actions */
-.data-actions {
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
-  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.modal-header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .hidden {
   display: none;
 }
 
-/* Privacy Card */
-.privacy-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  background: rgba(96, 165, 250, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.2);
-  border-radius: var(--radius-lg);
+/* Responsive */
+@media (max-width: 1024px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-stats {
+    flex-direction: row;
+    justify-content: space-around;
+    min-width: 100%;
+  }
+
+  .btn-edit {
+    position: static;
+    margin-top: var(--space-4);
+    width: 100%;
+  }
 }
 
-.privacy-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(96, 165, 250, 0.2);
-  border-radius: var(--radius-md);
-  color: var(--water);
+@media (max-width: 768px) {
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hero-main {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
 }
 
-.privacy-icon svg {
-  width: 24px;
-  height: 24px;
-}
-
-.privacy-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.privacy-title {
-  font-weight: var(--font-semibold);
-  color: var(--water);
-}
-
-.privacy-text {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-}
-
-/* Transitions */
-.collapse-enter-active,
-.collapse-leave-active {
-  transition: all var(--transition-base);
-  max-height: 800px;
-  opacity: 1;
-  overflow: hidden;
-}
-
-.collapse-enter-from,
-.collapse-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--transition-fast);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+@media (max-width: 480px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

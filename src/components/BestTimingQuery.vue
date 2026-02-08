@@ -1,9 +1,23 @@
 <template>
-  <BaseCard class="best-timing-query" elevated>
+  <BaseCard class="best-timing-query feature-card" elevated>
     <template #header>
-      <h3 class="card-title">最佳时机查询</h3>
-      <p class="card-subtitle">我想做某事，未来7天什么时候最好？</p>
+      <div class="feature-header">
+        <div class="feature-icon">
+          <AppIcon name="trophy" size="xl" />
+        </div>
+        <div class="feature-title-group">
+          <h3 class="card-title">最佳时机查询</h3>
+          <p class="card-subtitle">选择活动，找到未来7天最佳时机</p>
+        </div>
+      </div>
     </template>
+
+    <div class="hero-guide">
+      <p class="guide-text">
+        <AppIcon name="star" size="sm" />
+        不知道何时开始重要事项？让我们帮你找到最适合的时间
+      </p>
+    </div>
 
     <div class="query-form">
       <div class="form-row">
@@ -341,13 +355,74 @@ function jumpToTime(result) {
 
 <style scoped>
 .best-timing-query {
-  margin-bottom: var(--space-6);
+  margin-bottom: 0;
+}
+
+/* Feature Card Styles */
+.feature-card :deep(.card-header) {
+  background: linear-gradient(135deg, rgba(232, 196, 102, 0.1) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(232, 196, 102, 0.2);
+  margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.feature-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.feature-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--metal) 0%, var(--metal-dim) 100%);
+  color: var(--ink-black);
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.feature-title-group {
+  flex: 1;
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .card-subtitle {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   margin: var(--space-1) 0 0;
+}
+
+/* Hero Guide */
+.hero-guide {
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  background: rgba(232, 196, 102, 0.08);
+  border-radius: var(--radius-lg);
+  border-left: 3px solid var(--metal);
+}
+
+.guide-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--metal);
+}
+
+.guide-text svg {
+  flex-shrink: 0;
 }
 
 .query-form {

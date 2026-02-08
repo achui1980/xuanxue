@@ -1,8 +1,15 @@
 <template>
-  <BaseCard class="conflict-checker" elevated>
+  <BaseCard class="conflict-checker compact-card" elevated>
     <template #header>
-      <h3 class="card-title">计划冲突检查</h3>
-      <p class="card-subtitle">检查你的计划时间是否合适</p>
+      <div class="compact-header">
+        <div class="compact-icon">
+          <AppIcon name="check-circle" size="lg" />
+        </div>
+        <div>
+          <h3 class="card-title">快速检查</h3>
+          <p class="card-subtitle">验证计划时间</p>
+        </div>
+      </div>
     </template>
 
     <div class="checker-form">
@@ -267,24 +274,57 @@ function selectAlternative(alt) {
 
 <style scoped>
 .conflict-checker {
-  margin-bottom: var(--space-6);
+  margin-bottom: 0;
+}
+
+/* Compact Header */
+.compact-card :deep(.card-header) {
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.compact-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.compact-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--water);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .card-subtitle {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  margin: var(--space-1) 0 0;
+  margin: 0;
 }
 
+/* Compact Form */
 .checker-form {
   background: var(--bg-elevated);
   border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  margin: var(--space-5) 0;
+  padding: var(--space-4);
+  margin: var(--space-3) 0;
 }
 
 .form-row {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .form-row:last-child {

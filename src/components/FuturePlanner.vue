@@ -1,22 +1,23 @@
 <template>
   <BaseCard class="future-planner" elevated>
     <template #header>
-      <h3 class="card-title">未来7天日程规划</h3>
-      <p class="card-subtitle">根据你的五行特征，推荐每天适合的活动</p>
+      <div class="planner-header-row">
+        <div>
+          <h3 class="card-title">未来7天规划</h3>
+          <p class="card-subtitle">提前了解每日运势</p>
+        </div>
+        <div class="nav-arrows">
+          <button class="nav-btn" @click="shiftDays(-1)" :disabled="shiftOffset <= 0">
+            <AppIcon name="arrow-left" size="sm" />
+          </button>
+          <button class="nav-btn" @click="shiftDays(1)" :disabled="shiftOffset >= 7">
+            <AppIcon name="arrow-right" size="sm" />
+          </button>
+        </div>
+      </div>
     </template>
 
     <div v-if="hasBirthInfo" class="calendar-container">
-      <!-- 日期导航 -->
-      <div class="calendar-nav">
-        <button class="nav-btn" @click="shiftDays(-1)" :disabled="shiftOffset <= 0">
-          <AppIcon name="arrow-left" size="sm" />
-        </button>
-        <span class="nav-label">{{ dateRangeLabel }}</span>
-        <button class="nav-btn" @click="shiftDays(1)" :disabled="shiftOffset >= 7">
-          <AppIcon name="arrow-right" size="sm" />
-        </button>
-      </div>
-
       <!-- 横向日历 -->
       <div class="calendar-row">
         <div
@@ -301,34 +302,42 @@ watch(
 
 <style scoped>
 .future-planner {
-  margin-bottom: var(--space-6);
+  margin-bottom: 0;
+}
+
+/* Compact Header */
+.planner-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-2);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0;
 }
 
 .card-subtitle {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   margin: var(--space-1) 0 0;
 }
 
-.calendar-container {
-  margin-top: var(--space-5);
-}
-
-/* Calendar Navigation */
-.calendar-nav {
+.nav-arrows {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-4);
-  padding: 0 var(--space-1);
+  gap: var(--space-1);
 }
 
 .nav-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -347,16 +356,14 @@ watch(
   cursor: not-allowed;
 }
 
-.nav-label {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  font-weight: var(--font-medium);
+.calendar-container {
+  margin-top: var(--space-3);
 }
 
-/* Calendar Row */
+/* Calendar Row - Optimized for medium card */
 .calendar-row {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-1);
   overflow-x: auto;
   padding-bottom: var(--space-2);
   -webkit-overflow-scrolling: touch;
@@ -364,13 +371,14 @@ watch(
 
 .day-card {
   flex: 1;
-  min-width: 100px;
+  min-width: 70px;
+  max-width: 90px;
   background: var(--bg-elevated);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
   cursor: pointer;
   transition: all var(--transition-fast);
-  border: 2px solid transparent;
+  border: 1px solid transparent;
 }
 
 .day-card:hover {
@@ -417,17 +425,17 @@ watch(
 
 .day-header {
   text-align: center;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .day-name {
-  font-size: var(--text-xs);
+  font-size: 10px;
   color: var(--text-secondary);
   display: block;
 }
 
 .day-date {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: var(--font-bold);
   color: var(--text-primary);
 }
@@ -435,8 +443,8 @@ watch(
 .day-score {
   text-align: center;
   font-weight: var(--font-bold);
-  font-size: var(--text-xl);
-  margin-bottom: var(--space-2);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-1);
 }
 
 .day-score.high {

@@ -134,6 +134,30 @@
       <polyline points="18 15 12 9 6 15" />
     </g>
 
+    <!-- Bell (铃铛/提醒) -->
+    <g v-else-if="name === 'bell'">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </g>
+
+    <!-- Database (数据库) -->
+    <g v-else-if="name === 'database'">
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+    </g>
+
+    <!-- Shield (盾牌/隐私) -->
+    <g v-else-if="name === 'shield'">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </g>
+
+    <!-- Edit (编辑) -->
+    <g v-else-if="name === 'edit'">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </g>
+
     <!-- Trophy/Gold Medal (第一名) -->
     <g v-else-if="name === 'trophy'">
       <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />

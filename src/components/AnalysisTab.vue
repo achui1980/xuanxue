@@ -1,8 +1,15 @@
 <template>
   <div class="analysis-tab">
-    <BestTimingQuery />
-    <ConflictChecker />
-    <FuturePlanner />
+    <div class="bento-grid stagger-enter">
+      <!-- 主要功能：最佳时机查询 -->
+      <BestTimingQuery class="bento-item-large feature-card-primary" />
+
+      <!-- 次要功能：未来7天规划 -->
+      <FuturePlanner class="bento-item" />
+
+      <!-- 快速工具：冲突检查 -->
+      <ConflictChecker class="bento-item" />
+    </div>
   </div>
 </template>
 
@@ -15,13 +22,40 @@ import FuturePlanner from '@/components/FuturePlanner.vue'
 <style scoped>
 .analysis-tab {
   width: 100%;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
+  padding: var(--space-4);
 }
 
-@media (max-width: 1024px) {
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+}
+
+.bento-item {
+  min-height: 200px;
+}
+
+.bento-item-large {
+  grid-column: span 2;
+  min-height: 280px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
   .analysis-tab {
-    max-width: 100%;
+    padding: var(--space-3);
+  }
+
+  .bento-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .bento-item-large {
+    grid-column: span 1;
+    min-height: auto;
   }
 }
 </style>

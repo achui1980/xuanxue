@@ -1,6 +1,5 @@
 /* ============================================
-   时机 - 全局样式系统
-   主题：深墨意境 + 水墨渐变
+   时机 - 全局样式系统 + 动画增强
    ============================================ */
 
 /* Google Fonts - Noto Serif TC & Noto Sans TC */
@@ -309,6 +308,17 @@ p {
   transform: translateY(0);
 }
 
+/* 主要功能卡片 - 金色边框高亮 */
+.feature-card-primary {
+  border: 2px solid var(--metal);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(232, 196, 102, 0.05) 100%);
+}
+
+.feature-card-primary:hover {
+  border-color: var(--metal-dim);
+  box-shadow: 0 0 30px rgba(232, 196, 102, 0.15);
+}
+
 /* 标签 */
 .tag {
   display: inline-flex;
@@ -388,6 +398,50 @@ p {
 }
 
 /* ============================================
+   Bento Grid 布局
+   ============================================ */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+}
+
+.bento-item {
+  min-height: 200px;
+}
+
+.bento-item-full {
+  grid-column: span 2;
+}
+
+.bento-item-large {
+  grid-column: span 2;
+  min-height: 300px;
+}
+
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-item-full,
+  .bento-item-large {
+    grid-column: span 1;
+  }
+}
+
+/* ============================================
+   四层递进布局（个人页面）
+   ============================================ */
+.profile-section {
+  margin-bottom: var(--space-6);
+}
+
+.profile-section:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
    动画关键帧
    ============================================ */
 @keyframes fadeIn {
@@ -402,7 +456,7 @@ p {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -452,6 +506,29 @@ p {
   }
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 动画类 */
 .animate-fadeIn {
   animation: fadeIn var(--transition-base) forwards;
 }
@@ -472,6 +549,12 @@ p {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+.animate-slideIn {
+  animation: slideIn var(--transition-base) forwards;
+}
+.animate-slideDown {
+  animation: slideDown var(--transition-base) forwards;
+}
 
 /* 交错动画延迟 */
 .stagger-1 {
@@ -487,6 +570,54 @@ p {
   animation-delay: 0.4s;
 }
 .stagger-5 {
+  animation-delay: 0.5s;
+}
+
+/* 卡片悬停效果 */
+.card-hover {
+  transition: all var(--transition-base);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 页面切换动画 */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.3s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* 交错进入动画容器 */
+.stagger-enter > * {
+  opacity: 0;
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+.stagger-enter > *:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.stagger-enter > *:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.stagger-enter > *:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.stagger-enter > *:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.stagger-enter > *:nth-child(5) {
   animation-delay: 0.5s;
 }
 
@@ -556,4 +687,19 @@ p {
 ::selection {
   background: var(--accent-glow);
   color: var(--text-primary);
+}
+
+/* ============================================
+   响应式工具
+   ============================================ */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .hide-desktop {
+    display: none !important;
+  }
 }
