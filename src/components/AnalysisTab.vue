@@ -42,7 +42,7 @@ import FuturePlanner from '@/components/FuturePlanner.vue'
   min-height: 280px;
 }
 
-/* 移动端适配 */
+/* 平板适配 */
 @media (max-width: 768px) {
   .analysis-tab {
     padding: var(--space-3);
@@ -56,6 +56,17 @@ import FuturePlanner from '@/components/FuturePlanner.vue'
   .bento-item-large {
     grid-column: span 1;
     min-height: auto;
+  }
+}
+
+/* 手机适配 */
+@media (max-width: 480px) {
+  .analysis-tab {
+    padding: var(--space-2);
+  }
+
+  .bento-grid {
+    gap: var(--space-3);
   }
 }
 </style>

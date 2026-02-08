@@ -240,6 +240,8 @@ p {
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .btn:active {
@@ -619,6 +621,46 @@ p {
 }
 .stagger-enter > *:nth-child(5) {
   animation-delay: 0.5s;
+}
+
+/* ============================================
+   触摸反馈与交互
+   ============================================ */
+
+/* 按钮点击反馈 */
+.btn:active,
+.card-interactive:active,
+.day-card:active,
+.nav-btn:active,
+.result-item:active,
+.alternative-btn:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+/* 移动端禁用 hover 放大，使用 active 反馈 */
+@media (hover: none) and (pointer: coarse) {
+  .card-hover:hover,
+  .btn:hover {
+    transform: none;
+  }
+
+  .card-hover:active,
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  /* 扩大点击区域但不影响布局 */
+  .touch-area {
+    position: relative;
+  }
+
+  .touch-area::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    z-index: 1;
+  }
 }
 
 /* ============================================

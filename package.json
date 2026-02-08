@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "generate-icons": "pwa-assets-generator --preset minimal-2023 public/logo.svg",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{vue,js,css}\"",
@@ -19,6 +20,7 @@
     "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
+    "@vite-pwa/assets-generator": "^1.0.0",
     "@vitejs/plugin-vue": "^5.0.0",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/test-utils": "^2.4.6",
@@ -28,6 +30,7 @@
     "jsdom": "^27.4.0",
     "prettier": "^3.8.1",
     "vite": "^5.0.0",
+    "vite-plugin-pwa": "^0.21.0",
     "vitest": "^4.0.18"
   }
 }

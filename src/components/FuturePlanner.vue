@@ -336,8 +336,10 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -429,7 +431,7 @@ watch(
 }
 
 .day-name {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-secondary);
   display: block;
 }
@@ -492,9 +494,11 @@ watch(
 
 .hint-label {
   font-weight: var(--font-bold);
-  padding: 2px 4px;
+  padding: 3px 6px;
   border-radius: var(--radius-sm);
-  font-size: 10px;
+  font-size: 11px;
+  min-width: 20px;
+  text-align: center;
 }
 
 .hint-label.do {

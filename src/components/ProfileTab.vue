@@ -557,5 +557,30 @@ function handleImport(event) {
   .settings-grid {
     grid-template-columns: 1fr;
   }
+
+  .hero-avatar {
+    width: 72px;
+    height: 72px;
+  }
+
+  .hero-title {
+    font-size: var(--text-xl);
+  }
+
+  .hero-description {
+    font-size: var(--text-xs);
+  }
+
+  .hero-tags {
+    justify-content: center;
+  }
+
+  .hero-stats {
+    padding: var(--space-3);
+  }
+
+  .stat-value {
+    font-size: var(--text-lg);
+  }
 }
 </style>

@@ -28,3 +28,15 @@ coverage/
 .env
 .env.local
 .env.*.local
+
+# PWA generated assets
+public/pwa-*.png
+public/apple-touch-icon-*.png
+public/maskable-icon-*.png
+public/favicon.ico
+
+# Vercel
+.vercel
+
+# Netlify
+.netlify

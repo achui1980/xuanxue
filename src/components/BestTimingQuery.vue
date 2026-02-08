@@ -461,13 +461,23 @@ function jumpToTime(result) {
   cursor: pointer;
   font-size: var(--text-sm);
   color: var(--text-primary);
+  padding: 10px 12px;
+  margin: -10px -12px;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.preference-checkbox:hover {
+  background: var(--bg-elevated);
 }
 
 .preference-checkbox input[type='checkbox'] {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
   accent-color: var(--water);
+  min-width: 20px;
+  min-height: 20px;
 }
 
 .btn-full {

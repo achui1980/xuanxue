@@ -1,0 +1,38 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景：深靛蓝圆角矩形 -->
+  <rect width="512" height="512" rx="128" fill="#0f172a"/>
+  
+  <!-- 装饰：内圆环 -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#1e293b" stroke-width="8"/>
+  
+  <!-- 主视觉：金色"时"字 -->
+  <text 
+    x="256" 
+    y="320" 
+    text-anchor="middle" 
+    fill="#e8c466" 
+    font-family="serif" 
+    font-size="220" 
+    font-weight="bold"
+    style="font-family: 'Noto Serif SC', serif;"
+  >时</text>
+  
+  <!-- 装饰：外圆环（金色细线） -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#e8c466" stroke-width="4" opacity="0.6"/>
+  
+  <!-- 时辰标记点（12个） -->
+  <g fill="#e8c466">
+    <circle cx="256" cy="56" r="8"/>
+    <circle cx="352" cy="92" r="6"/>
+    <circle cx="420" cy="160" r="6"/>
+    <circle cx="456" cy="256" r="8"/>
+    <circle cx="420" cy="352" r="6"/>
+    <circle cx="352" cy="420" r="6"/>
+    <circle cx="256" cy="456" r="8"/>
+    <circle cx="160" cy="420" r="6"/>
+    <circle cx="92" cy="352" r="6"/>
+    <circle cx="56" cy="256" r="8"/>
+    <circle cx="92" cy="160" r="6"/>
+    <circle cx="160" cy="92" r="6"/>
+  </g>
+</svg>
