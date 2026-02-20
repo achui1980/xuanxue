@@ -109,6 +109,28 @@ export const BRANCH_LIU_CHONG = {
 }
 
 /**
+ * 地支三合局 (能量 +8)
+ * 申子辰合水, 寅午戌合火, 巳酉丑合金, 亥卯未合木
+ */
+export const SAN_HE = [
+  ['申', '子', '辰'],
+  ['寅', '午', '戌'],
+  ['巳', '酉', '丑'],
+  ['亥', '卯', '未']
+]
+
+/**
+ * 地支三会局 (能量 +8)
+ * 寅卯辰会木, 巳午未会火, 申酉戌会金, 亥子丑会水
+ */
+export const SAN_HUI = [
+  ['寅', '卯', '辰'],
+  ['巳', '午', '未'],
+  ['申', '酉', '戌'],
+  ['亥', '子', '丑']
+]
+
+/**
  * 计算用户八字
  * @param {number} year - 出生年份
  * @param {number} month - 出生月份 (1-12)
@@ -353,21 +375,455 @@ const TAO_HUA_MAP = {
 }
 
 /**
- * 贵人对应表（天乙贵人 - 简化版）
- * 甲戊并牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸rabbit/snake，庚辛Tiger/Horse
- * 甲戊见丑未，乙己见子申，丙丁见亥酉，壬癸见卯巳，庚辛见寅午
+ * 天乙贵人表 (以年干或日干查)
+ * 甲戊并牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸蛇兔藏，庚辛逢虎马
  */
-const GUI_REN_MAP = {
+const TIAN_YI_MAP = {
   甲: ['丑', '未'],
   戊: ['丑', '未'],
   乙: ['子', '申'],
   己: ['子', '申'],
   丙: ['亥', '酉'],
   丁: ['亥', '酉'],
-  壬: ['卯', '巳'],
-  癸: ['卯', '巳'],
+  壬: ['巳', '卯'],
+  癸: ['巳', '卯'],
   庚: ['寅', '午'],
   辛: ['寅', '午']
+}
+
+/**
+ * 太极贵人表 (以年干 or 日干查)
+ * 甲乙生人子午中，丙丁鸡兔定亨通，戊己两干临四季，庚辛寅亥禄丰隆，壬癸巳申偏喜用
+ */
+const TAI_JI_MAP = {
+  甲: ['子', '午'],
+  乙: ['子', '午'],
+  丙: ['酉', '卯'],
+  丁: ['酉', '卯'],
+  戊: ['辰', '戌', '丑', '未'],
+  己: ['辰', '戌', '丑', '未'],
+  庚: ['寅', '亥'],
+  辛: ['寅', '亥'],
+  壬: ['巳', '申'],
+  癸: ['巳', '申']
+}
+
+/**
+ * 文昌贵人表 (以日干查)
+ * 甲巳乙午丙戊申，丁己酉位庚亥寻，辛子壬寅癸卯位
+ */
+const WEN_CHANG_MAP = {
+  甲: '巳',
+  乙: '午',
+  丙: '申',
+  戊: '申',
+  丁: '酉',
+  己: '酉',
+  庚: '亥',
+  辛: '子',
+  壬: '寅',
+  癸: '卯'
+}
+
+/**
+ * 羊刃表 (以日干查)
+ * 甲卯乙辰丙戊午，丁己未庚酉辛戌，壬子癸丑
+ */
+const YANG_REN_MAP = {
+  甲: '卯',
+  乙: '辰',
+  丙: '午',
+  戊: '午',
+  丁: '未',
+  己: '未',
+  庚: '酉',
+  辛: '戌',
+  壬: '子',
+  癸: '丑'
+}
+
+/**
+ * 金舆表 (以日干查 - 禄前二位)
+ * 甲龙乙蛇丙戊羊，丁己猴歌庚犬方，辛猪壬牛癸虎地
+ */
+const JIN_YU_MAP = {
+  甲: '辰',
+  乙: '巳',
+  丙: '未',
+  戊: '未',
+  丁: '申',
+  己: '申',
+  庚: '戌',
+  辛: '亥',
+  壬: '丑',
+  癸: '寅'
+}
+
+/**
+ * 红鸾天喜表 (以年支查)
+ * 鼠:红鸾卯/天喜酉, 牛:寅/申, 虎:丑/未...
+ * 公式: 红鸾 = 卯逆数至年支 (子->卯, 丑->寅, 寅->丑, 卯->子, 辰->亥, 巳->戌, 午->酉, 未->申, 申->未, 酉->午, 戌->巳, 亥->辰)
+ * 天喜 = 红鸾对冲
+ */
+const HONG_LUAN_MAP = {
+  子: '卯',
+  丑: '寅',
+  寅: '丑',
+  卯: '子',
+  辰: '亥',
+  巳: '戌',
+  午: '酉',
+  未: '申',
+  申: '未',
+  酉: '午',
+  戌: '巳',
+  亥: '辰'
+}
+
+/**
+ * 劫煞表 (以年支或日支查)
+ * 申子辰在巳，寅午戌在亥，巳酉丑在寅，亥卯未在申
+ */
+const JIE_SHA_MAP = {
+  申: '巳',
+  子: '巳',
+  辰: '巳',
+  寅: '亥',
+  午: '亥',
+  戌: '亥',
+  巳: '寅',
+  酉: '寅',
+  丑: '寅',
+  亥: '申',
+  卯: '申',
+  未: '申'
+}
+
+/**
+ * 孤辰寡宿表 (以年支查)
+ * 亥子丑: 寅孤/戌寡
+ * 寅卯辰: 巳孤/丑寡
+ * 巳午未: 申孤/辰寡
+ * 申酉戌: 亥孤/未寡
+ */
+const GU_GUA_MAP = {
+  亥: { gu: '寅', gua: '戌' },
+  子: { gu: '寅', gua: '戌' },
+  丑: { gu: '寅', gua: '戌' },
+  寅: { gu: '巳', gua: '丑' },
+  卯: { gu: '巳', gua: '丑' },
+  辰: { gu: '巳', gua: '丑' },
+  巳: { gu: '申', gua: '辰' },
+  午: { gu: '申', gua: '辰' },
+  未: { gu: '申', gua: '辰' },
+  申: { gu: '亥', gua: '未' },
+  酉: { gu: '亥', gua: '未' },
+  戌: { gu: '亥', gua: '未' }
+}
+
+/**
+ * 驿马表 (以年支或日支查)
+ */
+const YI_MA_MAP = {
+  申: '寅',
+  子: '寅',
+  辰: '寅',
+  寅: '申',
+  午: '申',
+  戌: '申',
+  巳: '亥',
+  酉: '亥',
+  丑: '亥',
+  亥: '巳',
+  卯: '巳',
+  未: '巳'
+}
+
+/**
+ * V2.0 模块化计算函数：日柱影响
+ */
+export function calculateDayImpact(userBazi, dayPillar) {
+  let score = 0
+  const reasons = []
+
+  const userDayMaster = userBazi.day.stem
+  const userDayBranch = userBazi.day.branch
+  const dayStem = dayPillar.stem
+  const dayBranch = dayPillar.branch
+
+  const userElement = HEAVENLY_STEM_ELEMENTS[userDayMaster]
+  const dayElement = HEAVENLY_STEM_ELEMENTS[dayStem]
+
+  // 1. 日柱天干 vs 日主 (±12)
+  if (ELEMENT_GENERATES[dayElement] === userElement) {
+    score += 15 // 提升权重
+    reasons.push('得天时生助，能量源源不断')
+  } else if (dayElement === userElement) {
+    score += 10 // 提升权重
+    reasons.push('得天时助力，气场稳固')
+  } else if (ELEMENT_RESTRICTS[dayElement] === userElement) {
+    score -= 8 // 降低扣分
+    reasons.push('天时稍有克制，需稳扎稳打')
+  } else if (ELEMENT_GENERATES[userElement] === dayElement) {
+    score -= 5
+    reasons.push('天时消耗精力，注意休息')
+  }
+
+  // 2. 日柱地支 vs 用户日支 (六合/六冲 ±10)
+  if (BRANCH_LIU_HE[userDayBranch] === dayBranch) {
+    score += 12 // 提升权重
+    reasons.push('地利相合，行事顺畅')
+  } else if (BRANCH_LIU_CHONG[userDayBranch] === dayBranch) {
+    score -= 10 // 降低扣分
+    reasons.push('地利相冲，变动较多')
+  }
+
+  // 3. 日柱地支 vs 用户年支 (六合/六冲 ±6)
+  if (BRANCH_LIU_HE[userBazi.year.branch] === dayBranch) {
+    score += 8 // 提升权重
+    reasons.push('年支相合，根基稳固')
+  } else if (BRANCH_LIU_CHONG[userBazi.year.branch] === dayBranch) {
+    score -= 6 // 降低扣分
+    reasons.push('年支相冲，长辈或外界压力')
+  }
+
+  return { score, reasons }
+}
+
+/**
+ * V2.0 模块化计算函数：时辰影响
+ */
+export function calculateHourImpact(userBazi, dayPillar, hourPillar) {
+  let score = 0
+  const reasons = []
+
+  const userDayMaster = userBazi.day.stem
+  const userDayBranch = userBazi.day.branch
+  const hourStem = hourPillar.stem
+  const hourBranch = hourPillar.branch
+  const dayBranch = dayPillar.branch
+
+  const userElement = HEAVENLY_STEM_ELEMENTS[userDayMaster]
+  const hourElement = HEAVENLY_STEM_ELEMENTS[hourStem]
+
+  // 1. 时辰天干 vs 日主 (±10)
+  if (ELEMENT_GENERATES[hourElement] === userElement) {
+    score += 12 // 提升权重
+    reasons.push('时运生助，效率倍增')
+  } else if (hourElement === userElement) {
+    score += 8 // 提升权重
+    reasons.push('时运相辅，得心应手')
+  } else if (ELEMENT_RESTRICTS[hourElement] === userElement) {
+    score -= 6 // 降低扣分
+    reasons.push('时运受阻，宜守不宜攻')
+  }
+
+  // 2. 时辰地支 vs 用户日支 (六合/六冲 ±8)
+  if (BRANCH_LIU_HE[userDayBranch] === hourBranch) {
+    score += 10 // 提升权重
+    reasons.push('时支六合，人和事顺')
+  } else if (BRANCH_LIU_CHONG[userDayBranch] === hourBranch) {
+    score -= 8 // 降低扣分
+    reasons.push('时支相冲，多生变数')
+  }
+
+  // 3. 时辰地支 vs 日柱地支 (六合/六冲 ±6)
+  if (BRANCH_LIU_HE[dayBranch] === hourBranch) {
+    score += 8 // 提升权重
+    reasons.push('日时相合，气场和谐')
+  } else if (BRANCH_LIU_CHONG[dayBranch] === hourBranch) {
+    score -= 6 // 降低扣分
+    reasons.push('日时相冲，易有波折')
+  }
+
+  // 4. 时辰地支 vs 用户年支 (冲煞 -8)
+  if (BRANCH_LIU_CHONG[userBazi.year.branch] === hourBranch) {
+    score -= 6 // 降低扣分
+    reasons.push('岁破临门，谨言慎行')
+  }
+
+  return { score, reasons }
+}
+
+/**
+ * V2.0 模块化计算函数：神煞影响
+ */
+export function calculateShenShaImpact(userBazi, hourPillar) {
+  let score = 0
+  const reasons = []
+  const stars = []
+  const clashes = []
+
+  const hourBranch = hourPillar.branch
+  const userDayMaster = userBazi.day.stem
+  const userDayBranch = userBazi.day.branch
+  const userYearBranch = userBazi.year.branch
+  const userYearStem = userBazi.year.stem
+
+  // 1. 贵人 (天乙贵人) +10
+  const guiRenBranches = TIAN_YI_MAP[userDayMaster] || []
+  const yearGuiRenBranches = TIAN_YI_MAP[userYearStem] || []
+  if (guiRenBranches.includes(hourBranch) || yearGuiRenBranches.includes(hourBranch)) {
+    score += 18 // 提升权重 (原+10)
+    reasons.push('天乙贵人照临，遇事呈祥')
+    stars.push({ name: '天乙贵人', desc: '遇事呈祥，有贵人相助' })
+  }
+
+  // 2. 文昌 +6
+  if (WEN_CHANG_MAP[userDayMaster] === hourBranch) {
+    score += 10 // 提升权重 (原+6)
+    reasons.push('文昌星临，思如泉涌')
+    stars.push({ name: '文昌贵人', desc: '利于学习、考试、写作' })
+  }
+
+  // 3. 桃花 +3
+  if (TAO_HUA_MAP[userDayBranch] === hourBranch || TAO_HUA_MAP[userYearBranch] === hourBranch) {
+    score += 5 // 提升权重 (原+3)
+    reasons.push('桃花星动，人缘极佳')
+    stars.push({ name: '桃花', desc: '人缘好，利社交、恋爱' })
+  }
+
+  // 4. 驿马 +2
+  if (YI_MA_MAP[userDayBranch] === hourBranch || YI_MA_MAP[userYearBranch] === hourBranch) {
+    score += 3 // 提升权重 (原+2)
+    reasons.push('驿马星动，利于出行')
+    stars.push({ name: '驿马', desc: '利于出行、变动' })
+  }
+
+  // 5. 冲煞 -15 (日破/岁破)
+  // 注意：calculateHourImpact 已经计算了冲的五行分，这里是神煞层面的额外减分
+  if (BRANCH_LIU_CHONG[userDayBranch] === hourBranch) {
+    score -= 10 // 降低扣分 (原-15)
+    reasons.push('日破大耗，诸事宜静')
+    clashes.push({ name: '日破', desc: '运势动荡，不宜大事' })
+  }
+  if (BRANCH_LIU_CHONG[userYearBranch] === hourBranch) {
+    score -= 8 // 降低扣分 (原-12)
+    reasons.push('岁破临门，谨言慎行')
+    clashes.push({ name: '岁破', desc: '长辈或外界压力大' })
+  }
+  
+  // 去重
+  const uniqueStars = stars.filter((s, i, self) => i === self.findIndex(t => t.name === s.name))
+  const uniqueClashes = clashes.filter((c, i, self) => i === self.findIndex(t => t.name === c.name))
+
+  return { score, reasons, stars: uniqueStars, clashes: uniqueClashes }
+}
+
+/**
+ * V2.0 模块化计算函数：特殊组合
+ */
+export function calculateSpecialCombo(userBazi, dayPillar, hourPillar) {
+  let score = 0
+  const reasons = []
+
+  const dayBranch = dayPillar.branch
+  const hourBranch = hourPillar.branch
+  const userDayBranch = userBazi.day.branch
+  const monthBranch = userBazi.month.branch
+
+  // 1. 双合 (日柱和时辰都与命主日支相合) +10
+  if (BRANCH_LIU_HE[userDayBranch] === dayBranch && BRANCH_LIU_HE[userDayBranch] === hourBranch) {
+    score += 10
+    reasons.push('日柱与时辰双合命主日支，大吉')
+  }
+
+  // 2. 双冲 (日柱和时辰都与命主日支相冲) -12
+  if (BRANCH_LIU_CHONG[userDayBranch] === dayBranch && BRANCH_LIU_CHONG[userDayBranch] === hourBranch) {
+    score -= 12
+    reasons.push('日柱与时辰双冲命主日支，大凶')
+  }
+
+  // 3. 日柱与时辰相合 +5 (已在 hourImpact 计算过地支六合，这里可视为额外加成)
+  if (BRANCH_LIU_HE[dayBranch] === hourBranch) {
+    score += 5
+    reasons.push('日时双合')
+  }
+
+  // 4. 三合局检查 (日支+时支+月支)
+  const branches = [dayBranch, hourBranch, monthBranch]
+  const isSanHe = SAN_HE.some(group => group.every(b => branches.includes(b)))
+  if (isSanHe) {
+    score += 8
+    reasons.push('地支三合局成，能量强旺')
+  }
+  
+  // 5. 三会局检查
+  const isSanHui = SAN_HUI.some(group => group.every(b => branches.includes(b)))
+  if (isSanHui) {
+    score += 8
+    reasons.push('地支三会局成，气势宏大')
+  }
+
+  return { score, reasons }
+}
+
+/**
+ * 获取能量等级
+ */
+export function getEnergyLevel(score) {
+  if (score >= 85) return { level: '大吉', color: 'green' }
+  if (score >= 70) return { level: '吉', color: 'light-green' }
+  if (score >= 45) return { level: '平', color: 'yellow' } // 阈值调整：60->45 (更友好)
+  if (score >= 25) return { level: '凶', color: 'orange' } // 阈值调整：40->25 (更友好)
+  return { level: '大凶', color: 'red' }
+}
+
+/**
+ * V2.0 主计算入口
+ * @param {Object} userBazi - 用户八字
+ * @param {Object} userGods - 用户喜用神
+ * @param {Date} queryDate - 查询时间
+ */
+export function calculateHourEnergyV2(userBazi, userGods, queryDate) {
+  // 1. 获取查询日期的日柱和时辰柱
+  // 注意：calculateBaZi 可能会失败，需要容错
+  const dayPillarInfo = calculateBaZi(queryDate.getFullYear(), queryDate.getMonth() + 1, queryDate.getDate(), 12)
+  const hourPillarInfo = getCurrentHourBazi(queryDate)
+  
+  if (!dayPillarInfo || !hourPillarInfo) {
+    return { score: 50, level: '平', reasons: [], shenSha: [], clashes: [] }
+  }
+  
+  // 提取由于计算函数需要的结构 (calculateBaZi 返回的是完整结构，我们只需要日柱)
+  const dayPillar = dayPillarInfo.day
+  const hourPillar = hourPillarInfo
+
+  // 2. 基础分
+  let score = 60 // 基础分提升至60 (原50)
+  const allReasons = []
+  
+  // 3. 日柱影响 (±25)
+  const dayImpact = calculateDayImpact(userBazi, dayPillar)
+  score += dayImpact.score
+  allReasons.push(...dayImpact.reasons)
+
+  // 4. 时辰影响 (±20)
+  const hourImpact = calculateHourImpact(userBazi, dayPillar, hourPillar)
+  score += hourImpact.score
+  allReasons.push(...hourImpact.reasons)
+
+  // 5. 神煞影响 (±15)
+  const shenShaImpact = calculateShenShaImpact(userBazi, hourPillar)
+  score += shenShaImpact.score
+  allReasons.push(...shenShaImpact.reasons)
+
+  // 6. 特殊组合 (±10)
+  const comboImpact = calculateSpecialCombo(userBazi, dayPillar, hourPillar)
+  score += comboImpact.score
+  allReasons.push(...comboImpact.reasons)
+
+  // 7. 分数限制与等级判定
+  score = Math.max(20, Math.min(95, score))
+  const levelInfo = getEnergyLevel(score)
+
+  return {
+    score,
+    level: levelInfo.level,
+    reasons: allReasons.join('；'),
+    shenSha: shenShaImpact.stars,
+    clashes: shenShaImpact.clashes
+  }
 }
 
 /**
@@ -386,66 +842,99 @@ export function calculateShenSha(userBazi, hourBazi) {
   const userYearBranch = userBazi.year.branch
   const userDayBranch = userBazi.day.branch
   const userDayMaster = userBazi.dayMaster // 日干
-  const userYearStem = userBazi.year.stem // 年干 (部分神煞看年干)
+  const userYearStem = userBazi.year.stem // 年干
+
+  // === 凶煞部分 ===
 
   // 1. 冲煞 (以日支和年支为主)
   if (CLASH_MAP[userDayBranch] === hourBranch) {
-    clashes.push({ name: '日破', desc: '时辰与日支相冲，运势动荡，不宜大事' })
+    clashes.push({ name: '日破', desc: '日支相冲，运势动荡，不宜大事' })
   }
   if (CLASH_MAP[userYearBranch] === hourBranch) {
-    clashes.push({ name: '岁破', desc: '时辰与年支相冲，长辈或外界压力大' })
+    clashes.push({ name: '岁破', desc: '年支相冲，长辈或外界压力大' })
   }
 
-  // 2. 桃花 (以年支或日支查)
+  // 2. 劫煞 (以年支或日支查)
+  if (JIE_SHA_MAP[userYearBranch] === hourBranch || JIE_SHA_MAP[userDayBranch] === hourBranch) {
+    clashes.push({ name: '劫煞', desc: '易破财、生波折，需谨慎行事' })
+  }
+
+  // 3. 孤辰/寡宿 (以年支查)
+  const guGua = GU_GUA_MAP[userYearBranch]
+  if (guGua) {
+    if (guGua.gu === hourBranch) {
+      clashes.push({ name: '孤辰', desc: '孤独感强，不利社交' })
+    }
+    if (guGua.gua === hourBranch) {
+      clashes.push({ name: '寡宿', desc: '内心孤僻，易离群索居' })
+    }
+  }
+
+  // 4. 羊刃 (以日干查)
+  if (YANG_REN_MAP[userDayMaster] === hourBranch) {
+    // 羊刃喜忌看身强弱，此处暂作为中性/凶煞提示
+    clashes.push({ name: '羊刃', desc: '性情刚烈，易冲动或受伤' })
+  }
+
+  // === 吉神部分 ===
+
+  // 1. 天乙贵人 (以年干或日干查)
+  const dayGuiRen = TIAN_YI_MAP[userDayMaster] || []
+  const yearGuiRen = TIAN_YI_MAP[userYearStem] || []
+  if (dayGuiRen.includes(hourBranch) || yearGuiRen.includes(hourBranch)) {
+    stars.push({ name: '天乙贵人', desc: '最强吉星，遇事呈祥，逢凶化吉' })
+  }
+
+  // 2. 太极贵人 (以年干或日干查)
+  const dayTaiJi = TAI_JI_MAP[userDayMaster] || []
+  const yearTaiJi = TAI_JI_MAP[userYearStem] || []
+  if (dayTaiJi.includes(hourBranch) || yearTaiJi.includes(hourBranch)) {
+    stars.push({ name: '太极贵人', desc: '利于思考、玄学、钻研' })
+  }
+
+  // 3. 文昌贵人 (以日干查)
+  if (WEN_CHANG_MAP[userDayMaster] === hourBranch) {
+    stars.push({ name: '文昌贵人', desc: '利于学习、考试、写作、策划' })
+  }
+
+  // 4. 金舆 (以日干查)
+  if (JIN_YU_MAP[userDayMaster] === hourBranch) {
+    stars.push({ name: '金舆', desc: '财运佳，出行顺利，得交通之利' })
+  }
+
+  // 5. 桃花 (以年支或日支查)
   if (TAO_HUA_MAP[userYearBranch] === hourBranch || TAO_HUA_MAP[userDayBranch] === hourBranch) {
     stars.push({ name: '桃花', desc: '人缘好，利社交、恋爱，但也易分心' })
   }
 
-  // 3. 贵人 (以年干或日干查)
-  const dayGuiRen = GUI_REN_MAP[userDayMaster] || []
-  const yearGuiRen = GUI_REN_MAP[userYearStem] || []
-
-  if (dayGuiRen.includes(hourBranch) || yearGuiRen.includes(hourBranch)) {
-    stars.push({ name: '贵人', desc: '遇事呈祥，有贵人相助，逢凶化吉' })
+  // 6. 红鸾/天喜 (以年支查)
+  const hongLuan = HONG_LUAN_MAP[userYearBranch]
+  const tianXi = CLASH_MAP[hongLuan] // 天喜是红鸾的对冲
+  if (hourBranch === hongLuan) {
+    stars.push({ name: '红鸾', desc: '主婚恋喜庆，异性缘极佳' })
+  }
+  if (hourBranch === tianXi) {
+    stars.push({ name: '天喜', desc: '主开心之事，消灾解难' })
   }
 
-  // 4. 文昌 (以日干查) - 简化: 甲巳乙午丙戊申，丁己酉位庚亥寻，辛子壬寅癸卯位
-  const WEN_CHANG_MAP = {
-    甲: '巳',
-    乙: '午',
-    丙: '申',
-    戊: '申',
-    丁: '酉',
-    己: '酉',
-    庚: '亥',
-    辛: '子',
-    壬: '寅',
-    癸: '卯'
-  }
-  if (WEN_CHANG_MAP[userDayMaster] === hourBranch) {
-    stars.push({ name: '文昌', desc: '利于学习、考试、写作、思考' })
-  }
-
-  // 5. 驿马 (申子辰在寅，寅午戌在申，巳酉丑在亥，亥卯未在巳)
-  const YI_MA_MAP = {
-    申: '寅',
-    子: '寅',
-    辰: '寅',
-    寅: '申',
-    午: '申',
-    戌: '申',
-    巳: '亥',
-    酉: '亥',
-    丑: '亥',
-    亥: '巳',
-    卯: '巳',
-    未: '巳'
-  }
+  // 7. 驿马 (以年支或日支查)
   if (YI_MA_MAP[userYearBranch] === hourBranch || YI_MA_MAP[userDayBranch] === hourBranch) {
     stars.push({ name: '驿马', desc: '奔波走动，利于出行、出差、变动' })
   }
 
-  return { clashes, stars }
+  // 8. 魁罡 (日柱判断，此处是时辰判断，仅作参考，或判断流日/流时是否也是魁罡)
+  // 严格来说魁罡是日柱神煞。如果时柱也是魁罡 (庚辰/庚戌/壬辰/戊戌)，可视为一种性格/能量加持
+  const KUI_GANG_LIST = ['庚辰', '庚戌', '壬辰', '戊戌']
+  if (KUI_GANG_LIST.includes(hourBazi.full)) {
+     stars.push({ name: '魁罡', desc: '性格刚烈，掌权，聪敏' })
+  }
+
+  // 去重 (防止年日查到同一个)
+  const uniqueStars = stars.filter((star, index, self) =>
+    index === self.findIndex((t) => t.name === star.name)
+  )
+
+  return { clashes, stars: uniqueStars }
 }
 
 /**
@@ -467,7 +956,7 @@ export function calculateHourEnergy(userBazi, userGods, dayBazi, hourBazi, debug
     return calculateHourEnergyLegacy(userBazi, userGods, hourBazi)
   }
 
-  let score = 50 // 基础分数
+  let score = 60 // 基础分数 (V2.1 提升至60)
   const debugInfo = []
 
   const dayMaster = userBazi.day.stem
@@ -481,17 +970,17 @@ export function calculateHourEnergy(userBazi, userGods, dayBazi, hourBazi, debug
 
     // 1.1 日柱天干 vs 用户日主（最核心）
     if (ELEMENT_GENERATES[dayStemElement] === dayMasterElement) {
-      score += 18 // 日柱生助日主，大吉
-      debugInfo.push(`日柱${dayStem}生助日主+18`)
+      score += 20 // 日柱生助日主，大吉 (原+18)
+      debugInfo.push(`日柱${dayStem}生助日主+20`)
     } else if (dayStemElement === dayMasterElement) {
-      score += 12 // 日柱同类，吉
-      debugInfo.push(`日柱${dayStem}同类+12`)
+      score += 15 // 日柱同类，吉 (原+12)
+      debugInfo.push(`日柱${dayStem}同类+15`)
     } else if (ELEMENT_RESTRICTS[dayStemElement] === dayMasterElement) {
-      score -= 15 // 日柱克制日主，凶
-      debugInfo.push(`日柱${dayStem}克日主-15`)
+      score -= 10 // 日柱克制日主，凶 (原-15)
+      debugInfo.push(`日柱${dayStem}克日主-10`)
     } else if (ELEMENT_RESTRICTS[dayMasterElement] === dayStemElement) {
-      score -= 8 // 日柱被日主克，小凶
-      debugInfo.push(`日柱${dayStem}被克-8`)
+      score -= 5 // 日柱被日主克，小凶 (原-8)
+      debugInfo.push(`日柱${dayStem}被克-5`)
     }
 
     // 1.2 日柱地支与用户八字地支关系（六合/六冲）
@@ -500,17 +989,17 @@ export function calculateHourEnergy(userBazi, userGods, dayBazi, hourBazi, debug
       score += 10 // 六合，吉
       debugInfo.push(`日柱地支六合+10`)
     } else if (BRANCH_LIU_CHONG[userDayBranch] === dayBranch) {
-      score -= 12 // 六冲，凶
-      debugInfo.push(`日柱地支六冲-12`)
+      score -= 10 // 六冲，凶 (原-12)
+      debugInfo.push(`日柱地支六冲-10`)
     }
 
     // 1.3 日柱天干与喜忌神
     if (userGods.favorable.includes(dayStemElement)) {
-      score += 10
-      debugInfo.push(`日柱天干喜神+10`)
+      score += 12 // (原+10)
+      debugInfo.push(`日柱天干喜神+12`)
     } else if (userGods.unfavorable.includes(dayStemElement)) {
-      score -= 10
-      debugInfo.push(`日柱天干忌神-10`)
+      score -= 8 // (原-10)
+      debugInfo.push(`日柱天干忌神-8`)
     }
   }
 
@@ -522,38 +1011,38 @@ export function calculateHourEnergy(userBazi, userGods, dayBazi, hourBazi, debug
 
   // 2.1 时辰天干与喜用神关系（降低权重，避免过度影响）
   if (userGods.favorable.includes(hourStemElement)) {
-    score += 12
-    debugInfo.push(`时辰喜神+12`)
+    score += 15 // (原+12)
+    debugInfo.push(`时辰喜神+15`)
   } else if (userGods.unfavorable.includes(hourStemElement)) {
-    score -= 12
-    debugInfo.push(`时辰忌神-12`)
+    score -= 8 // (原-12)
+    debugInfo.push(`时辰忌神-8`)
   }
 
   // 2.2 时辰地支与喜用神关系
   if (userGods.favorable.includes(hourBranchElement)) {
-    score += 8
-    debugInfo.push(`时辰地支喜神+8`)
+    score += 10 // (原+8)
+    debugInfo.push(`时辰地支喜神+10`)
   } else if (userGods.unfavorable.includes(hourBranchElement)) {
-    score -= 8
-    debugInfo.push(`时辰地支忌神-8`)
+    score -= 5 // (原-8)
+    debugInfo.push(`时辰地支忌神-5`)
   }
 
   // 2.3 时辰生助日主
   if (ELEMENT_GENERATES[hourStemElement] === dayMasterElement) {
-    score += 8
-    debugInfo.push(`时辰生助+8`)
+    score += 10 // (原+8)
+    debugInfo.push(`时辰生助+10`)
   }
 
   // 2.4 时辰与日主同类
   if (hourStemElement === dayMasterElement) {
-    score += 5
-    debugInfo.push(`时辰同类+5`)
+    score += 8 // (原+5)
+    debugInfo.push(`时辰同类+8`)
   }
 
   // 2.5 时辰克日主
   if (ELEMENT_RESTRICTS[hourStemElement] === dayMasterElement) {
-    score -= 10
-    debugInfo.push(`时辰克日主-10`)
+    score -= 5 // (原-10)
+    debugInfo.push(`时辰克日主-5`)
   }
 
   // 2.6 时辰地支与用户日柱地支关系
@@ -563,35 +1052,59 @@ export function calculateHourEnergy(userBazi, userGods, dayBazi, hourBazi, debug
       score += 8 // 时辰与当日地支合
       debugInfo.push(`时辰合日支+8`)
     } else if (BRANCH_LIU_CHONG[dayBranch] === hourBranch) {
-      score -= 10 // 时辰与当日地支冲
-      debugInfo.push(`时辰冲日支-10`)
+      score -= 8 // 时辰与当日地支冲 (原-10)
+      debugInfo.push(`时辰冲日支-8`)
     }
   }
 
   // ==================== 3. 神煞影响 ====================
   const shenSha = calculateShenSha(userBazi, hourBazi)
 
-  // 贵人加分
-  if (shenSha.stars.some((s) => s.name === '贵人')) {
-    score += 8
-    debugInfo.push(`贵人+8`)
-  }
-  // 文昌加分
-  if (shenSha.stars.some((s) => s.name === '文昌')) {
-    score += 5
-    debugInfo.push(`文昌+5`)
-  }
-  // 桃花微加分
-  if (shenSha.stars.some((s) => s.name === '桃花')) {
-    score += 3
-    debugInfo.push(`桃花+3`)
-  }
+  // 遍历吉神加分
+  shenSha.stars.forEach((star) => {
+    if (star.name === '天乙贵人') {
+      score += 15 // (原+10)
+      debugInfo.push(`天乙贵人+15`)
+    } else if (star.name === '太极贵人') {
+      score += 5
+      debugInfo.push(`太极贵人+5`)
+    } else if (star.name === '文昌贵人') {
+      score += 8 // (原+6)
+      debugInfo.push(`文昌+8`)
+    } else if (star.name === '金舆') {
+      score += 4
+      debugInfo.push(`金舆+4`)
+    } else if (star.name === '红鸾' || star.name === '天喜') {
+      score += 8 // (原+5)
+      debugInfo.push(`${star.name}+8`)
+    } else if (star.name === '驿马') {
+      score += 3
+      debugInfo.push(`驿马+3`)
+    } else if (star.name === '桃花') {
+      score += 2
+      debugInfo.push(`桃花+2`)
+    } else if (star.name === '魁罡') {
+      score += 5 // (原+3)
+      debugInfo.push(`魁罡+5`)
+    }
+  })
 
-  // 冲煞减分
-  if (shenSha.clashes.length > 0) {
-    score -= 12
-    debugInfo.push(`冲煞-12`)
-  }
+  // 遍历凶煞减分
+  shenSha.clashes.forEach((clash) => {
+    if (clash.name === '日破' || clash.name === '岁破') {
+      score -= 12
+      debugInfo.push(`${clash.name}-12`)
+    } else if (clash.name === '劫煞') {
+      score -= 5
+      debugInfo.push(`劫煞-5`)
+    } else if (clash.name === '孤辰' || clash.name === '寡宿') {
+      score -= 3
+      debugInfo.push(`${clash.name}-3`)
+    } else if (clash.name === '羊刃') {
+      score -= 4
+      debugInfo.push(`羊刃-4`)
+    }
+  })
 
   // ==================== 4. 分数限制与输出 ====================
   // 限制在 20-95 范围内（避免极端值）

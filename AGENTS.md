@@ -141,3 +141,19 @@ try {
 - [ ] 代码遵循命名约定
 - [ ] 使用路径别名 `@`
 - [ ] 添加适当的错误处理
+
+## 🔄 上下文同步 (Context Sync)
+
+### 当前进度 (Status)
+- **完成 V2.1 算法优化**: 已在 `src/utils/tyme.js` 中再次调整了评分阈值（平 60->45, 凶 40->25），以实现更友好的评分体验，确保普通日子也是'平'或'吉'，并与文档 V2.1 保持一致。
+- **文档同步**: `docs/bazi-energy-algorithm-v2.md` 已确认为最新 V2.1 版本，包含友好评分标准。
+- **测试通过**: `src/utils/tyme.spec.js` 测试用例全部通过。
+
+### 关键记录 (Logs/Issues)
+- **Runtime Error**: `TypeError: Cannot read properties of undefined (reading 'map')` in `energy.js` (已修复).
+- **Test Failure**: `AssertionError` in `calculateDayImpact` (已修复).
+
+### 下一步 (Next Steps)
+- **真太阳时 (True Solar Time)**: 调研并引入经度校正功能，提升算法专业度。
+- **用户反馈监控**: 持续观察新评分体系下的用户反馈。
+- **UI 优化**: 考虑在前端展示今日的核心神煞（如图标）。

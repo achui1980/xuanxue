@@ -3,11 +3,10 @@ import { ref, computed } from 'vue'
 import { useUserStore } from './user'
 import {
   getCurrentHourBazi,
-  calculateHourEnergy,
-  calculateBaZi, // 【修复】添加缺失的导入
+  calculateHourEnergyV2, // Use V2
+  calculateBaZi, 
   getActivitiesByElement,
   getAvoidActivitiesByElement,
-  calculateShenSha,
   getLunarInfo,
   HEAVENLY_STEM_ELEMENTS,
   EARTHLY_BRANCH_ELEMENTS
@@ -56,19 +55,18 @@ export const useEnergyStore = defineStore('energy', () => {
         continue
       }
 
-      // 【修复1】计算当天的日柱（用于V2算法）
-      const dayBazi = calculateBaZi(today.getFullYear(), today.getMonth() + 1, today.getDate(), 12)
-
-      let score = calculateHourEnergy(
+      // V2.0 核心逻辑
+      const energyResult = calculateHourEnergyV2(
         userStore.profile.bazi,
         {
           favorable: userStore.profile.favorable,
           unfavorable: userStore.profile.unfavorable
         },
-        dayBazi, // 【修复】传入日柱
-        hourBazi // 传入时辰
+        hourDate
       )
 
+      let score = energyResult.score
+      
       // 应用个性化规则调整分数
       score = applyPersonalRules(score, hour)
 
@@ -82,7 +80,8 @@ export const useEnergyStore = defineStore('energy', () => {
         dominantElement = hourBranchElement
       }
 
-      const { stars, clashes } = calculateShenSha(userStore.profile.bazi, hourBazi)
+      // V2 已经返回了 stars 和 clashes
+      const { shenSha: stars, clashes } = energyResult
       const shenShaDesc = [
         ...stars.map((s) => `✨${s.name}`),
         ...clashes.map((c) => `⚠️${c.name}`)
@@ -91,27 +90,20 @@ export const useEnergyStore = defineStore('energy', () => {
       const recommendedActivities = getActivitiesByElement(dominantElement)
       const avoidActivities = getAvoidActivitiesByElement(dominantElement)
 
+      // V2 已经生成了 reasons，我们可以利用它，或者保留这里的 brief 逻辑
       let brief = ''
-      let elementHint = ''
+      let elementHint = energyResult.level // 直接使用 V2 的等级文案 (大吉/吉/平...)
 
       if (clashes.length > 0) {
-        elementHint = '凶'
-        brief = `时辰${hourBazi.full}，犯${clashes[0].name} (${clashes[0].desc})，宜静守。`
+        brief = `时辰${hourBazi.full}，犯${clashes[0].name}，${clashes[0].desc}。`
       } else if (score >= 80) {
-        elementHint = '极佳时机'
-        brief = `时辰${hourBazi.full}，${dominantElement}旺，与您的命局非常相合，适合处理重要事务。`
+        brief = `时辰${hourBazi.full}，${dominantElement}旺，${energyResult.reasons.split('；')[0]}，能量极佳。`
       } else if (score >= 70) {
-        elementHint = '吉时'
         brief = `时辰${hourBazi.full}，${dominantElement}助，能量充沛，适合行动。`
       } else if (score >= 50) {
-        elementHint = '平稳'
         brief = `时辰${hourBazi.full}，能量平和，可处理日常事务。`
-      } else if (score >= 30) {
-        elementHint = '不宜'
-        brief = `时辰${hourBazi.full}，${dominantElement}不利，宜谨慎行事。`
       } else {
-        elementHint = '忌'
-        brief = `时辰${hourBazi.full}，能量不佳，建议休息调整。`
+        brief = `时辰${hourBazi.full}，能量较弱，${energyResult.reasons.split('；')[0] || '宜休息'}。`
       }
 
       result.push({
@@ -141,15 +133,24 @@ export const useEnergyStore = defineStore('energy', () => {
 
     // High level tags from ShenSha
     stars.forEach((s) => {
-      if (s.name === '贵人') tags.push('适合求助')
-      if (s.name === '文昌') tags.push('适合脑力')
-      if (s.name === '桃花') tags.push('人缘在线')
-      if (s.name === '驿马') tags.push('适合跑动')
+      if (s.name === '天乙贵人') tags.push('贵人相助')
+      if (s.name === '太极贵人') tags.push('利思考')
+      if (s.name === '文昌贵人') tags.push('脑力全开')
+      if (s.name === '金舆') tags.push('财运佳')
+      if (s.name === '红鸾' || s.name === '天喜') tags.push('人缘旺')
+      if (s.name === '桃花') tags.push('异性缘')
+      if (s.name === '驿马') tags.push('利出行')
+      if (s.name === '魁罡') tags.push('气场强')
     })
 
     clashes.forEach((c) => {
-      tags.push('少做决策')
-      tags.push('注意情绪')
+      if (c.name === '日破' || c.name === '岁破') {
+        tags.push('诸事不宜')
+        tags.push('忌大事')
+      }
+      if (c.name === '劫煞') tags.push('防破财')
+      if (c.name === '羊刃') tags.push('忌冲动')
+      if (c.name === '孤辰' || c.name === '寡宿') tags.push('宜独处')
     })
 
     // Fallback tags based on score if no specific ShenSha
@@ -170,13 +171,27 @@ export const useEnergyStore = defineStore('energy', () => {
     const lunarInfo = getLunarInfo(today)
 
     // 1. Calculate Overall Score
-    // Weight daytime (08-22) higher
+    // Weight logic V2.1 (Optimized for daily activity)
     let totalWeightedScore = 0
     let totalWeight = 0
     let scores = []
 
     hoursData.value.forEach((h) => {
-      const weight = h.hour >= 8 && h.hour <= 22 ? 1.2 : 0.8
+      let weight = 1.0
+
+      // Active hours (09:00 - 21:00) get highest weight
+      if (h.hour >= 9 && h.hour <= 21) {
+        weight = 2.0
+      }
+      // Transition hours (07:00-09:00, 21:00-23:00) get normal weight
+      else if ((h.hour >= 7 && h.hour < 9) || (h.hour > 21 && h.hour <= 23)) {
+        weight = 1.0
+      }
+      // Sleep hours (23:00 - 07:00) get low weight
+      else {
+        weight = 0.2
+      }
+
       totalWeightedScore += h.score * weight
       totalWeight += weight
       scores.push(h.score)
@@ -192,6 +207,9 @@ export const useEnergyStore = defineStore('energy', () => {
     // Low variance (stable) is good, High variance (volatile) is risky
     if (stdDev < 10) overallScore += 5
     else if (stdDev > 20) overallScore -= 5
+
+    // Optimism Bias (V2.1): Small boost to improve user mood
+    overallScore += 2
 
     overallScore = Math.max(0, Math.min(100, overallScore))
 
@@ -888,14 +906,15 @@ export const useEnergyStore = defineStore('energy', () => {
         const hourDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0)
         const hourBazi = getCurrentHourBazi(hourDate)
         if (hourBazi) {
-          dailyTotalScore += calculateHourEnergy(
+          const energyResult = calculateHourEnergyV2(
             userStore.profile.bazi,
             {
               favorable: userStore.profile.favorable,
               unfavorable: userStore.profile.unfavorable
             },
-            hourBazi
+            hourDate
           )
+          dailyTotalScore += energyResult.score
         } else {
           dailyTotalScore += 50
         }
