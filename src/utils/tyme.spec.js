@@ -5,7 +5,8 @@ import {
   EARTHLY_BRANCH_ELEMENTS,
   getActivitiesByElement,
   getAvoidActivitiesByElement,
-  calculateShenSha
+  calculateShenSha,
+  getAlmanacInfo
 } from './tyme'
 
 describe('Tyme Utils', () => {
@@ -16,6 +17,30 @@ describe('Tyme Utils', () => {
       expect(WU_XING.EARTH).toBe('土')
       expect(WU_XING.METAL).toBe('金')
       expect(WU_XING.WATER).toBe('水')
+    })
+
+    describe('getAlmanacInfo', () => {
+      it('should return almanac info with new detailed fields', () => {
+        const date = new Date('2024-02-20') // 甲辰年正月十一
+        const info = getAlmanacInfo(date)
+        
+        expect(info.recommends).toBeDefined()
+        expect(info.avoids).toBeDefined()
+        
+        // Check new fields
+        expect(info.duty).toBeDefined()
+        expect(typeof info.duty).toBe('string')
+        
+        expect(info.nineStar).toBeDefined()
+        
+        expect(info.twentyEightStar).toBeDefined()
+        
+        expect(info.dayNaYin).toBeDefined()
+        
+        expect(info.phase).toBeDefined()
+        
+        expect(info.zodiac).toBeDefined()
+      })
     })
 
     it('should map Heavenly Stems to correct Elements', () => {
@@ -152,7 +177,8 @@ describe('Tyme Utils', () => {
 
   describe('V2 Algorithm Modules', () => {
     const { 
-      calculateDayImpact, 
+      getAlmanacInfo,
+  calculateDayImpact, 
       calculateHourImpact, 
       calculateSpecialCombo,
       calculateHourEnergyV2 

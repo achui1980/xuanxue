@@ -6,7 +6,7 @@
     </p>
 
     <div class="form-grid">
-      <div class="form-field">
+      <div class="form-field field-year">
         <label>出生年份</label>
         <input
           type="number"
@@ -18,7 +18,7 @@
         />
       </div>
 
-      <div class="form-field">
+      <div class="form-field field-month">
         <label>出生月份</label>
         <select v-model.number="form.month" class="input select">
           <option :value="null" disabled>选择</option>
@@ -26,7 +26,7 @@
         </select>
       </div>
 
-      <div class="form-field">
+      <div class="form-field field-day">
         <label>出生日期</label>
         <select v-model.number="form.day" class="input select">
           <option :value="null" disabled>选择</option>
@@ -34,14 +34,39 @@
         </select>
       </div>
 
-      <div class="form-field">
+      <div class="form-field field-hour">
         <label>出生时辰</label>
-        <select v-model.number="form.hour" class="input select">
-          <option :value="null" disabled>选择</option>
-          <option v-for="h in 24" :key="h - 1" :value="h - 1">
-            {{ h - 1 }}时 {{ getBranchForHour(h - 1) }}
-          </option>
-        </select>
+        <div class="time-inputs">
+          <select v-model.number="form.hour" class="input select hour-select">
+            <option :value="null" disabled>时</option>
+            <option v-for="h in 24" :key="h - 1" :value="h - 1">
+              {{ h - 1 }}时 {{ getBranchForHour(h - 1) }}
+            </option>
+          </select>
+          <input
+            type="number"
+            v-model.number="form.minute"
+            class="input minute-input"
+            placeholder="分"
+            min="0"
+            max="59"
+          />
+        </div>
+      </div>
+
+      <div class="form-field field-longitude">
+        <label>
+          出生地经度
+          <span class="label-help">(东正西负)</span>
+        </label>
+        <input
+          type="number"
+          v-model.number="form.longitude"
+          class="input"
+          placeholder="例如: 116.4 (北京)"
+          step="0.01"
+        />
+        <div class="help-text">用于真太阳时校正，默认120°(北京时间)</div>
       </div>
     </div>
 
@@ -86,7 +111,9 @@ const form = ref({
   year: props.initialData?.birthYear || null,
   month: props.initialData?.birthMonth || null,
   day: props.initialData?.birthDay || null,
-  hour: props.initialData?.birthHour ?? null
+  hour: props.initialData?.birthHour ?? null,
+  minute: props.initialData?.birthMinute || 0,
+  longitude: props.initialData?.birthLongitude ?? 120
 })
 
 const errorMessage = ref('')
@@ -107,7 +134,9 @@ function handleSubmit() {
     form.value.year,
     form.value.month,
     form.value.day,
-    form.value.hour
+    form.value.hour,
+    form.value.minute,
+    form.value.longitude
   )
 
   if (success) {
@@ -142,16 +171,35 @@ function handleSubmit() {
   margin-bottom: var(--space-5);
 }
 
+.field-year, .field-month, .field-day, .field-hour {
+  grid-column: span 1;
+}
+
+.field-longitude {
+  grid-column: span 4;
+}
+
 @media (max-width: 1024px) {
   .form-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .field-longitude {
+    grid-column: span 2;
   }
 }
 
 @media (max-width: 480px) {
   .form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
   }
+  
+  .field-year { grid-column: span 2; }
+  .field-month { grid-column: span 1; }
+  .field-day { grid-column: span 1; }
+  .field-hour { grid-column: span 2; }
+  .field-longitude { grid-column: span 2; }
 }
 
 .form-field {
@@ -198,5 +246,33 @@ function handleSubmit() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.time-inputs {
+  display: flex;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.hour-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.minute-input {
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.label-help {
+  font-size: 0.8em;
+  color: var(--text-tertiary);
+  margin-left: var(--space-1);
+}
+
+.help-text {
+  font-size: 0.75em;
+  color: var(--text-tertiary);
+  margin-top: var(--space-1);
 }
 </style>

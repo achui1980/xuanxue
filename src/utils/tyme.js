@@ -131,17 +131,75 @@ export const SAN_HUI = [
 ]
 
 /**
+ * 计算真太阳时
+ * @param {Date} date - 输入的标准时间 (如北京时间)
+ * @param {number} longitude - 当地经度 (东经为正，西经为负)
+ * @param {number} timezone - 时区偏移 (如北京时间为 8)
+ * @returns {Date} 真太阳时 Date 对象
+ */
+export function getTrueSolarTime(date, longitude, timezone = 8) {
+  if (longitude === undefined || longitude === null) {
+    return date
+  }
+
+  // 1. 计算平太阳时 (Local Mean Time)
+  // 标准经度: 时区 * 15 (例如 UTC+8 -> 120度)
+  const standardLongitude = timezone * 15
+  // 经度差 (度)
+  const longitudeDiff = longitude - standardLongitude
+  // 经度时差 (毫秒): 1度 = 4分钟 = 240000毫秒
+  const longitudeOffset = longitudeDiff * 4 * 60 * 1000
+
+  // 2. 计算真太阳时差 (Equation of Time) - 使用近似公式
+  // D: 一年中的第几天 (0-365)
+  const startOfYear = new Date(date.getFullYear(), 0, 0)
+  const diff = date - startOfYear
+  const oneDay = 1000 * 60 * 60 * 24
+  const D = Math.floor(diff / oneDay)
+
+  // 角度 B (弧度)
+  const B = (2 * Math.PI * (D - 81)) / 365
+
+  // EoT (分钟) - 简化的天文公式
+  const eotMinutes = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B)
+  const eotOffset = eotMinutes * 60 * 1000
+
+  // 3. 最终计算
+  // 真太阳时 = 标准时间 + 经度时差 + 真太阳时差
+  const trueSolarTimeLimit = date.getTime() + longitudeOffset + eotOffset
+
+  return new Date(trueSolarTimeLimit)
+}
+
+/**
  * 计算用户八字
  * @param {number} year - 出生年份
  * @param {number} month - 出生月份 (1-12)
  * @param {number} day - 出生日期 (1-31)
  * @param {number} hour - 出生小时 (0-23)
+ * @param {number} [minute=0] - 出生分钟 (0-59)
+ * @param {number} [longitude] - 出生经度 (可选，用于真太阳时校正)
  * @returns {Object} 八字信息
  */
-export function calculateBaZi(year, month, day, hour) {
+export function calculateBaZi(year, month, day, hour, minute = 0, longitude) {
   try {
-    // 创建农历时辰对象
-    const solarTime = SolarTime.fromYmdHms(year, month, day, hour, 0, 0)
+    let solarTime
+    
+    if (longitude !== undefined && longitude !== null) {
+      const inputDate = new Date(year, month - 1, day, hour, minute)
+      const tst = getTrueSolarTime(inputDate, longitude)
+      solarTime = SolarTime.fromYmdHms(
+        tst.getFullYear(),
+        tst.getMonth() + 1,
+        tst.getDate(),
+        tst.getHours(),
+        tst.getMinutes(),
+        tst.getSeconds()
+      )
+    } else {
+      solarTime = SolarTime.fromYmdHms(year, month, day, hour, minute, 0)
+    }
+
     const lunarHour = solarTime.getLunarHour()
     const eightChar = lunarHour.getEightChar()
 
@@ -282,16 +340,33 @@ export function calculateUsefulGods(wuxingScores, dayMaster) {
 /**
  * 获取当前时辰的八字信息
  * @param {Date} date - 目标日期时间
+ * @param {number} [longitude] - 经度 (可选，用于真太阳时校正)
  * @returns {Object} 时辰八字
  */
-export function getCurrentHourBazi(date = new Date()) {
+export function getCurrentHourBazi(date = new Date(), longitude) {
   const year = date.getFullYear()
   const month = date.getMonth() + 1
   const day = date.getDate()
   const hour = date.getHours()
+  const minute = date.getMinutes()
 
   try {
-    const solarTime = SolarTime.fromYmdHms(year, month, day, hour, 0, 0)
+    let solarTime
+    
+    if (longitude !== undefined && longitude !== null) {
+      const tst = getTrueSolarTime(date, longitude)
+      solarTime = SolarTime.fromYmdHms(
+        tst.getFullYear(),
+        tst.getMonth() + 1,
+        tst.getDate(),
+        tst.getHours(),
+        tst.getMinutes(),
+        tst.getSeconds()
+      )
+    } else {
+      solarTime = SolarTime.fromYmdHms(year, month, day, hour, minute, 0)
+    }
+
     const lunarHour = solarTime.getLunarHour()
     const sixtyCycleHour = lunarHour.getSixtyCycleHour()
 
@@ -774,12 +849,21 @@ export function getEnergyLevel(score) {
  * @param {Object} userBazi - 用户八字
  * @param {Object} userGods - 用户喜用神
  * @param {Date} queryDate - 查询时间
+ * @param {number} [longitude] - 经度 (可选)
  */
-export function calculateHourEnergyV2(userBazi, userGods, queryDate) {
+export function calculateHourEnergyV2(userBazi, userGods, queryDate, longitude) {
   // 1. 获取查询日期的日柱和时辰柱
   // 注意：calculateBaZi 可能会失败，需要容错
-  const dayPillarInfo = calculateBaZi(queryDate.getFullYear(), queryDate.getMonth() + 1, queryDate.getDate(), 12)
-  const hourPillarInfo = getCurrentHourBazi(queryDate)
+  // 使用 12:00 作为标准日柱计算时间，但需考虑经度校正
+  const dayPillarInfo = calculateBaZi(
+    queryDate.getFullYear(),
+    queryDate.getMonth() + 1,
+    queryDate.getDate(),
+    12,
+    0,
+    longitude
+  )
+  const hourPillarInfo = getCurrentHourBazi(queryDate, longitude)
   
   if (!dayPillarInfo || !hourPillarInfo) {
     return { score: 50, level: '平', reasons: [], shenSha: [], clashes: [] }
@@ -1190,14 +1274,16 @@ export function getAvoidActivitiesByElement(element) {
 }
 
 /**
- * 获取每日黄历宜忌信息
+ * 获取每日黄历宜忌信息 (增强版)
  * @param {Date} date - 目标日期
- * @returns {Object} 宜忌信息 { recommends: [], avoids: [] }
+ * @returns {Object} 详细黄历信息
  */
 export function getAlmanacInfo(date = new Date()) {
   try {
     const solarDay = SolarDay.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate())
+    const lunarDay = solarDay.getLunarDay()
     const sixtyCycleDay = solarDay.getSixtyCycleDay()
+    const sixtyCycleYear = lunarDay.getYearSixtyCycle()
 
     // 获取宜做的事情
     const recommends = sixtyCycleDay.getRecommends().map((item) => ({
@@ -1212,12 +1298,35 @@ export function getAlmanacInfo(date = new Date()) {
     }))
 
     return {
-      recommends: recommends.slice(0, 5), // 最多显示5个
-      avoids: avoids.slice(0, 5)
+      recommends: recommends.slice(0, 6),
+      avoids: avoids.slice(0, 6),
+      // 新增高级参数
+      duty: lunarDay.getDuty().getName(), // 建除十二神 (e.g. 建日)
+      nineStar: lunarDay.getNineStar().toString(), // 九星 (e.g. 一白水)
+      twentyEightStar: lunarDay.getTwentyEightStar().getName(), // 二十八宿 (e.g. 角)
+      naYin: sixtyCycleYear.getSound().getName(), // 年纳音 (e.g. 覆灯火)
+      dayNaYin: sixtyCycleDay.getSixtyCycle().getSound().getName(), // 日纳音
+      phase: lunarDay.getPhase().getName(), // 月相
+      zodiac: lunarDay.getSixtyCycle().getEarthBranch().getZodiac().getName(), // 日生肖
+      pengZu: {
+        heaven: sixtyCycleDay.getSixtyCycle().getPengZu().getPengZuHeavenStem().getName(),
+        earth: sixtyCycleDay.getSixtyCycle().getPengZu().getPengZuEarthBranch().getName()
+      }
     }
   } catch (error) {
     console.error('获取黄历信息失败:', error)
-    return { recommends: [], avoids: [] }
+    return { 
+      recommends: [], 
+      avoids: [],
+      duty: '',
+      nineStar: '',
+      twentyEightStar: '',
+      naYin: '',
+      dayNaYin: '',
+      phase: '',
+      zodiac: '',
+      pengZu: { heaven: '', earth: '' }
+    }
   }
 }
 

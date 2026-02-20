@@ -45,10 +45,13 @@ export const useEnergyStore = defineStore('energy', () => {
 
     const today = new Date()
     const result = []
+    // 默认为北京时间 (120) 如果未设置
+    const currentLongitude = userStore.profile.currentLongitude || 120
 
     for (let hour = 0; hour < 24; hour++) {
       const hourDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hour, 0, 0)
-      const hourBazi = getCurrentHourBazi(hourDate)
+      // 使用真太阳时获取八字
+      const hourBazi = getCurrentHourBazi(hourDate, currentLongitude)
 
       if (!hourBazi) {
         result.push(getDefaultHourData(hour))
@@ -62,7 +65,8 @@ export const useEnergyStore = defineStore('energy', () => {
           favorable: userStore.profile.favorable,
           unfavorable: userStore.profile.unfavorable
         },
-        hourDate
+        hourDate,
+        currentLongitude
       )
 
       let score = energyResult.score
@@ -895,6 +899,7 @@ export const useEnergyStore = defineStore('energy', () => {
 
     const today = new Date()
     const result = []
+    const currentLongitude = userStore.profile.currentLongitude || 120
 
     for (let i = 0; i < 7; i++) {
       const date = new Date(today)
@@ -904,7 +909,7 @@ export const useEnergyStore = defineStore('energy', () => {
 
       for (let hour = 0; hour < 24; hour += 2) {
         const hourDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, 0, 0)
-        const hourBazi = getCurrentHourBazi(hourDate)
+        const hourBazi = getCurrentHourBazi(hourDate, currentLongitude)
         if (hourBazi) {
           const energyResult = calculateHourEnergyV2(
             userStore.profile.bazi,
@@ -912,7 +917,8 @@ export const useEnergyStore = defineStore('energy', () => {
               favorable: userStore.profile.favorable,
               unfavorable: userStore.profile.unfavorable
             },
-            hourDate
+            hourDate,
+            currentLongitude
           )
           dailyTotalScore += energyResult.score
         } else {

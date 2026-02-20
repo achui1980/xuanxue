@@ -49,6 +49,17 @@ export const useUserStore = defineStore('user', () => {
     storedProfile.personalizationWeight = 30
   }
 
+  // Ensure birth info fields exist (V2.1 Update)
+  if (storedProfile && typeof storedProfile.birthMinute === 'undefined') {
+    storedProfile.birthMinute = 0
+  }
+  if (storedProfile && typeof storedProfile.birthLongitude === 'undefined') {
+    storedProfile.birthLongitude = 120
+  }
+  if (storedProfile && typeof storedProfile.currentLongitude === 'undefined') {
+    storedProfile.currentLongitude = 120
+  }
+
   const profile = ref(
     storedProfile || {
       name: '用户A',
@@ -68,6 +79,11 @@ export const useUserStore = defineStore('user', () => {
       birthMonth: null,
       birthDay: null,
       birthHour: null,
+      birthMinute: 0,
+      birthLongitude: 120, // 默认为东经120度(北京时间标准)
+      
+      // 当前位置信息 (用于每日能量计算)
+      currentLongitude: 120,
 
       // 八字信息（自动计算）
       bazi: null,
@@ -121,15 +137,22 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 设置出生信息并自动计算八字、五行
    */
-  function setBirthInfo(year, month, day, hour) {
+  function setBirthInfo(year, month, day, hour, minute = 0, longitude = 120) {
     // 保存出生信息
     profile.value.birthYear = year
     profile.value.birthMonth = month
     profile.value.birthDay = day
     profile.value.birthHour = hour
+    profile.value.birthMinute = minute
+    profile.value.birthLongitude = longitude
+
+    // 如果没有设置过当前经度，默认为出生地经度
+    if (!profile.value.currentLongitude || profile.value.currentLongitude === 120) {
+      profile.value.currentLongitude = longitude
+    }
 
     // 计算八字
-    const bazi = calculateBaZi(year, month, day, hour)
+    const bazi = calculateBaZi(year, month, day, hour, minute, longitude)
     if (!bazi) {
       console.error('计算八字失败')
       return false
@@ -189,6 +212,9 @@ export const useUserStore = defineStore('user', () => {
     profile.value.birthMonth = null
     profile.value.birthDay = null
     profile.value.birthHour = null
+    profile.value.birthMinute = 0
+    profile.value.birthLongitude = 120
+    profile.value.currentLongitude = 120
     profile.value.bazi = null
     profile.value.dayMaster = null
     profile.value.wuxing = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 }

@@ -6,6 +6,28 @@
     </div>
 
     <template v-else>
+      <!-- 详细参数 (New) -->
+      <div class="almanac-details">
+        <div class="detail-item">
+          <span class="detail-label">值神</span>
+          <span class="detail-value">{{ almanacInfo.duty }}日</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">星宿</span>
+          <span class="detail-value">{{ almanacInfo.twentyEightStar }}宿</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">五行</span>
+          <span class="detail-value">{{ almanacInfo.dayNaYin }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">九星</span>
+          <span class="detail-value">{{ almanacInfo.nineStar }}</span>
+        </div>
+      </div>
+
+      <div class="divider" />
+
       <!-- 宜 -->
       <div class="almanac-section">
         <div class="section-header do">
@@ -107,6 +129,34 @@ onMounted(() => {
   100% {
     background-position: 200% 0;
   }
+}
+
+.almanac-details {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  background: var(--bg-secondary);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.detail-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.detail-value {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
 }
 
 .almanac-section {
